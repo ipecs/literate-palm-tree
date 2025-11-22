@@ -73,6 +73,24 @@ npm run preview
 
 La aplicación se abrirá automáticamente en `http://localhost:3000`
 
+## 🌐 Despliegue en GitHub Pages
+
+Para desplegar la aplicación en GitHub Pages:
+
+1. **Habilita GitHub Pages:**
+   - Ve a Settings > Pages en tu repositorio
+   - Selecciona **GitHub Actions** como source
+
+2. **Push a la rama main:**
+   ```bash
+   git push origin main
+   ```
+
+3. **Accede a tu app:**
+   - URL: `https://[tu-usuario].github.io/literate-palm-tree/`
+
+Para más detalles, consulta [DEPLOYMENT.md](./DEPLOYMENT.md)
+
 ## 📊 Estructura de la Interfaz
 
 ```
