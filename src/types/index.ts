@@ -7,6 +7,8 @@ export interface Medicine {
   conservationInstructions: string;
   dispensationPlace: string;
   additionalInfo: string;
+  imageUrl?: string;
+  iconType?: 'pill' | 'syrup' | 'injection' | 'capsule' | 'cream';
   createdAt: number;
 }
 

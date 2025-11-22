@@ -37,6 +37,40 @@ body {
     padding: 20mm;
   }
 
+  #treatment-report {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 15mm;
+  }
+
+  #treatment-report * {
+    color: black !important;
+    background: white !important;
+  }
+
+  #treatment-report .border {
+    border-color: black !important;
+  }
+
+  #treatment-report .text-clinical-700 {
+    color: black !important;
+    font-weight: bold;
+  }
+
+  #treatment-report .bg-clinical-50,
+  #treatment-report .bg-gray-50,
+  #treatment-report .bg-amber-50 {
+    background: white !important;
+    border: 1px solid black !important;
+  }
+
+  #treatment-report .border-clinical-600,
+  #treatment-report .border-clinical-700 {
+    border-color: black !important;
+    border-width: 2px;
+  }
+
   @page {
     margin: 0;
     size: A4;
