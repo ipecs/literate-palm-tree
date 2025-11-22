@@ -5,6 +5,7 @@ import {
   Calendar,
   Settings,
   Home,
+  Activity,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -15,6 +16,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Inicio', icon: Home },
+    { id: 'treatment-dashboard', label: 'Dashboard Tratamiento', icon: Activity },
     { id: 'patients', label: 'Pacientes', icon: Users },
     { id: 'medicines', label: 'Medicamentos', icon: Pill },
     { id: 'treatments', label: 'Tratamientos', icon: Calendar },

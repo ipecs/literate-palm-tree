@@ -5,8 +5,9 @@ import { Patients } from './components/Patients';
 import { Medicines } from './components/Medicines';
 import { Treatments } from './components/Treatments';
 import { Settings } from './components/Settings';
+import { TreatmentDashboard } from './components/TreatmentDashboard';
 
-type ViewType = 'dashboard' | 'patients' | 'medicines' | 'treatments' | 'settings';
+type ViewType = 'dashboard' | 'patients' | 'medicines' | 'treatments' | 'settings' | 'treatment-dashboard';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -14,7 +15,7 @@ function App() {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onNavigate={(view) => setCurrentView(view as ViewType)} />;
       case 'patients':
         return <Patients />;
       case 'medicines':
@@ -23,8 +24,10 @@ function App() {
         return <Treatments />;
       case 'settings':
         return <Settings />;
+      case 'treatment-dashboard':
+        return <TreatmentDashboard />;
       default:
-        return <Dashboard />;
+        return <Dashboard onNavigate={(view) => setCurrentView(view as ViewType)} />;
     }
   };
 

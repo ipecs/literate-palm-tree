@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Download, Upload, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Download, Upload, Trash2, AlertCircle, CheckCircle, FileSpreadsheet } from 'lucide-react';
 import { StorageService } from '../storage/localStorage';
+import * as XLSX from 'xlsx';
 
 export const Settings: React.FC = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -56,6 +57,92 @@ export const Settings: React.FC = () => {
     setShowDeleteConfirm(false);
     showMessage('success', 'Todos los datos han sido eliminados. Por favor recarga la página.');
     setTimeout(() => window.location.reload(), 2000);
+  };
+
+  const exportFullReportToExcel = () => {
+    const medicines = StorageService.getMedicines();
+    const patients = StorageService.getPatients();
+    const treatments = StorageService.getTreatments();
+    
+    const wb = XLSX.utils.book_new();
+    
+    // Sheet 1: Resumen
+    const summaryData = [
+      { 'Concepto': 'Total Medicamentos', 'Valor': medicines.length },
+      { 'Concepto': 'Total Pacientes', 'Valor': patients.length },
+      { 'Concepto': 'Total Tratamientos', 'Valor': treatments.length },
+      { 'Concepto': 'Grupos Farmacológicos', 'Valor': new Set(medicines.map(m => m.pharmacologicalAction.split(',')[0].trim())).size },
+      { 'Concepto': 'Fecha del Reporte', 'Valor': new Date().toLocaleDateString('es-ES') },
+      { 'Concepto': 'Centro', 'Valor': 'PharmaLocal - Sistema de Gestión Farmacéutica' }
+    ];
+    const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+    wsSummary['!cols'] = [{ wch: 25 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumen');
+    
+    // Sheet 2: Inventario de Medicamentos
+    const inventoryData = medicines.map(m => ({
+      'ID': m.id,
+      'Nombre Comercial': m.comercialName,
+      'Principio Activo': m.activePrinciples,
+      'Acción Farmacológica': m.pharmacologicalAction,
+      'Instrucciones de Administración': m.administrationInstructions,
+      'Instrucciones de Conservación': m.conservationInstructions,
+      'Lugar de Dispensación': m.dispensationPlace,
+      'Información Adicional': m.additionalInfo || '',
+      'Fecha de Creación': new Date(m.createdAt).toLocaleDateString('es-ES')
+    }));
+    const wsInventory = XLSX.utils.json_to_sheet(inventoryData);
+    wsInventory['!cols'] = [
+      { wch: 15 }, { wch: 25 }, { wch: 25 }, { wch: 30 }, 
+      { wch: 30 }, { wch: 25 }, { wch: 20 }, { wch: 30 }, { wch: 15 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsInventory, 'Inventario');
+    
+    // Sheet 3: Pacientes
+    const patientsData = patients.map(p => ({
+      'ID': p.id,
+      'Nombre Completo': p.fullName,
+      'Cédula/DNI': p.cedula,
+      'Fecha de Nacimiento': p.dateOfBirth,
+      'Teléfono': p.phone || '',
+      'Email': p.email || '',
+      'Dirección': p.address || '',
+      'Condiciones Médicas': p.medicalConditions || '',
+      'Fecha de Creación': new Date(p.createdAt).toLocaleDateString('es-ES')
+    }));
+    const wsPatients = XLSX.utils.json_to_sheet(patientsData);
+    wsPatients['!cols'] = [
+      { wch: 15 }, { wch: 30 }, { wch: 20 }, { wch: 15 },
+      { wch: 15 }, { wch: 25 }, { wch: 30 }, { wch: 30 }, { wch: 15 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsPatients, 'Pacientes');
+    
+    // Sheet 4: Tratamientos
+    const treatmentsData = treatments.map(t => {
+      const patient = patients.find(p => p.id === t.patientId);
+      const medicine = medicines.find(m => m.id === t.medicineId);
+      return {
+        'ID': t.id,
+        'Paciente': patient?.fullName || 'Desconocido',
+        'Medicamento': medicine?.comercialName || 'Desconocido',
+        'Fecha de Inicio': t.startDate,
+        'Fecha de Fin': t.endDate || '',
+        'Estado': t.isActive ? 'Activo' : 'Inactivo',
+        'Número de Dosis': t.doses.length,
+        'Instrucciones Generales': t.generalInstructions || '',
+        'Notas': t.notes || '',
+        'Fecha de Creación': new Date(t.createdAt).toLocaleDateString('es-ES')
+      };
+    });
+    const wsTreatments = XLSX.utils.json_to_sheet(treatmentsData);
+    wsTreatments['!cols'] = [
+      { wch: 15 }, { wch: 25 }, { wch: 25 }, { wch: 15 },
+      { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 30 }, { wch: 30 }, { wch: 15 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsTreatments, 'Tratamientos');
+    
+    XLSX.writeFile(wb, 'reporte_completo_pharmalocal.xlsx');
+    showMessage('success', 'Reporte completo exportado a Excel correctamente');
   };
 
   const stats = {
@@ -149,6 +236,27 @@ export const Settings: React.FC = () => {
           >
             <Upload className="w-5 h-5" />
             Cargar Backup
+          </button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="p-3 bg-purple-100 rounded-lg">
+              <FileSpreadsheet className="w-6 h-6 text-purple-600" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-gray-900">Exportar Reporte Completo (.xlsx)</h2>
+              <p className="text-gray-600 text-sm mt-1">
+                Exporta todos los datos del sistema a un archivo Excel profesional con múltiples hojas: Resumen, Inventario, Pacientes y Tratamientos.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={exportFullReportToExcel}
+            className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium flex items-center justify-center gap-2"
+          >
+            <FileSpreadsheet className="w-5 h-5" />
+            Descargar Reporte Completo (.xlsx)
           </button>
         </div>
 
