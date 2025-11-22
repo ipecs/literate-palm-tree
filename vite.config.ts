@@ -3,9 +3,18 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/literate-palm-tree/',
+  base: process.env.NODE_ENV === 'production' ? '/literate-palm-tree/' : '/',
   server: {
     port: 3000,
     open: true
+  },
+  build: {
+    assetsDir: 'assets',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      }
+    }
   }
 })
