@@ -29,9 +29,9 @@ const VISUAL_PLANNING_START_HOUR = 6;
 const VISUAL_PLANNING_HOURS = Array.from({ length: 24 }, (_, index) => (VISUAL_PLANNING_START_HOUR + index) % 24);
 
 const getEmojiForHour = (hour: number) => {
-  if (hour >= 6 && hour < 12) return '☀️';
-  if (hour >= 12 && hour < 18) return '🌤️';
-  if (hour >= 18 && hour < 22) return '🌙';
+  if (hour >= 6 && hour <= 12) return '☀️';
+  if (hour >= 13 && hour <= 18) return '🌤️';
+  if (hour >= 19 && hour <= 23) return '🌙';
   return '🛏️';
 };
 
@@ -115,7 +115,7 @@ const createVisualPlanningSheet = ({
   const patientRowIndex = addRow([`Paciente: ${patientName || 'No especificado'} • Fecha del plan: ${planDateLabel}`]);
   mergeFullRow(patientRowIndex);
 
-  const hoursRowIndex = addRow(['Hora', ...VISUAL_PLANNING_HOURS.map(hour => hour.toString().padStart(2, '0'))]);
+  const hoursRowIndex = addRow(['Hora', ...VISUAL_PLANNING_HOURS.map(hour => (hour === 0 ? '0' : hour.toString()))]);
   const emojiRowIndex = addRow(['Momento', ...VISUAL_PLANNING_HOURS.map(hour => getEmojiForHour(hour))]);
 
   const scheduledEntries = doseSchedule.flatMap(slot =>
