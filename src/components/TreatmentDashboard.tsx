@@ -18,6 +18,13 @@ interface DoseSchedule {
   }>;
 }
 
+const REPORT_WARNINGS = [
+  'Siga estrictamente las dosis y horarios indicados',
+  'No suspenda el tratamiento sin consulta médica',
+  'Consulte al profesional de salud ante cualquier reacción adversa',
+  'Mantenga los medicamentos fuera del alcance de niños'
+] as const;
+
 export const TreatmentDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'selection' | 'information' | 'calendar' | 'report' | 'database'>('dashboard');
   const [medicines, setMedicines] = useState<Medicine[]>([]);
@@ -158,6 +165,124 @@ export const TreatmentDashboard: React.FC = () => {
     }));
     
     exportToExcel(formattedData, 'inventario_medicamentos', 'Inventario');
+  };
+
+  const exportReportToExcel = () => {
+    if (!showReport) {
+      alert('Por favor genera el informe antes de exportar');
+      return;
+    }
+
+    const reportDate = new Date();
+    const planDate = reportDate.toLocaleDateString('es-ES');
+    const generatedAt = reportDate.toLocaleString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const headerData = [
+      { Campo: 'INFORME', Valor: 'PLAN DE TRATAMIENTO FARMACOLÓGICO' },
+      { Campo: 'Sistema', Valor: 'Sistema de Gestión Farmacéutica PharmaLocal' },
+      { Campo: '', Valor: '' },
+      { Campo: 'PACIENTE', Valor: patientName || 'No especificado' },
+      { Campo: 'FECHA DEL PLAN', Valor: planDate },
+      { Campo: 'GENERADO EL', Valor: generatedAt },
+      { Campo: '', Valor: '' }
+    ];
+
+    const hasScheduledMedicines = doseSchedule.some(slot => slot.medicines.length > 0);
+
+    const scheduleData: Array<Record<string, string>> = [{
+      Horario: 'PAUTA HORARIA DE ADMINISTRACIÓN',
+      Medicamento: '',
+      'Principio Activo': '',
+      'Grupo Farmacológico': '',
+      Dosis: '',
+      Instrucciones: ''
+    }];
+
+    doseSchedule.filter(slot => slot.medicines.length > 0).forEach(slot => {
+      scheduleData.push({
+        Horario: `═══ ${slot.timeSlot} ═══`,
+        Medicamento: '',
+        'Principio Activo': '',
+        'Grupo Farmacológico': '',
+        Dosis: '',
+        Instrucciones: ''
+      });
+
+      slot.medicines.forEach(item => {
+        scheduleData.push({
+          Horario: '',
+          Medicamento: item.medicine.comercialName,
+          'Principio Activo': item.medicine.activePrinciples,
+          'Grupo Farmacológico': item.medicine.pharmacologicalAction.split(',')[0].trim(),
+          Dosis: item.dosage,
+          Instrucciones: item.instructions || ''
+        });
+      });
+
+      scheduleData.push({
+        Horario: '',
+        Medicamento: '',
+        'Principio Activo': '',
+        'Grupo Farmacológico': '',
+        Dosis: '',
+        Instrucciones: ''
+      });
+    });
+
+    if (!hasScheduledMedicines) {
+      scheduleData.push({
+        Horario: 'Sin medicamentos asignados en el calendario',
+        Medicamento: '',
+        'Principio Activo': '',
+        'Grupo Farmacológico': '',
+        Dosis: '',
+        Instrucciones: ''
+      });
+    }
+
+    const warningsData: Array<Record<string, string>> = [
+      { Sección: '', Contenido: '' },
+      { Sección: '⚠️ ADVERTENCIAS IMPORTANTES', Contenido: '' },
+      ...REPORT_WARNINGS.map(warning => ({ Sección: '', Contenido: `• ${warning}` }))
+    ];
+
+    const wb = XLSX.utils.book_new();
+
+    const wsHeader = XLSX.utils.json_to_sheet(headerData);
+    wsHeader['!cols'] = [{ wch: 25 }, { wch: 50 }];
+    XLSX.utils.book_append_sheet(wb, wsHeader, 'Información General');
+
+    const wsSchedule = XLSX.utils.json_to_sheet(scheduleData);
+    wsSchedule['!cols'] = [
+      { wch: 30 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 35 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsSchedule, 'Pauta Horaria');
+
+    const wsWarnings = XLSX.utils.json_to_sheet(warningsData);
+    wsWarnings['!cols'] = [{ wch: 35 }, { wch: 60 }];
+    XLSX.utils.book_append_sheet(wb, wsWarnings, 'Advertencias');
+
+    const normalizedPatientName = (patientName || 'paciente')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gi, '_')
+      .replace(/^_+|_+$/g, '');
+
+    const formattedDateForFile = reportDate.toISOString().split('T')[0];
+    const fileName = `plan_tratamiento_${normalizedPatientName || 'paciente'}_${formattedDateForFile}`;
+
+    XLSX.writeFile(wb, `${fileName}.xlsx`);
   };
 
   const saveMedicine = () => {
@@ -488,13 +613,22 @@ export const TreatmentDashboard: React.FC = () => {
               Generar Informe
             </button>
             {showReport && (
-              <button
-                onClick={printReport}
-                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <Printer className="w-4 h-4" />
-                Imprimir / Guardar PDF
-              </button>
+              <>
+                <button
+                  onClick={exportReportToExcel}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Guardar como Excel
+                </button>
+                <button
+                  onClick={printReport}
+                  className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <Printer className="w-4 h-4" />
+                  Imprimir / Guardar PDF
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -553,10 +687,9 @@ export const TreatmentDashboard: React.FC = () => {
               <div className="bg-amber-50 border-l-4 border-amber-500 p-4">
                 <p className="font-semibold text-amber-900 mb-2">ADVERTENCIAS IMPORTANTES</p>
                 <ul className="text-sm text-amber-800 space-y-1">
-                  <li>• Siga estrictamente las dosis y horarios indicados</li>
-                  <li>• No suspenda el tratamiento sin consulta médica</li>
-                  <li>• Consulte al profesional de salud ante cualquier reacción adversa</li>
-                  <li>• Mantenga los medicamentos fuera del alcance de niños</li>
+                  {REPORT_WARNINGS.map(warning => (
+                    <li key={warning}>• {warning}</li>
+                  ))}
                 </ul>
               </div>
             </div>
