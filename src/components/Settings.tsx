@@ -71,7 +71,7 @@ export const Settings: React.FC = () => {
       { 'Concepto': 'Total Medicamentos', 'Valor': medicines.length },
       { 'Concepto': 'Total Pacientes', 'Valor': patients.length },
       { 'Concepto': 'Total Tratamientos', 'Valor': treatments.length },
-      { 'Concepto': 'Grupos Farmacológicos', 'Valor': new Set(medicines.map(m => m.pharmacologicalAction.split(',')[0].trim())).size },
+      { 'Concepto': 'Grupos Farmacológicos', 'Valor': new Set(medicines.map(m => m.pharmacologicalGroup || m.pharmacologicalAction?.split(',')[0].trim()).filter(Boolean)).size },
       { 'Concepto': 'Fecha del Reporte', 'Valor': new Date().toLocaleDateString('es-ES') },
       { 'Concepto': 'Centro', 'Valor': 'PharmaLocal - Sistema de Gestión Farmacéutica' }
     ];
@@ -83,18 +83,18 @@ export const Settings: React.FC = () => {
     const inventoryData = medicines.map(m => ({
       'ID': m.id,
       'Nombre Comercial': m.comercialName,
-      'Principio Activo': m.activePrinciples,
-      'Acción Farmacológica': m.pharmacologicalAction,
-      'Instrucciones de Administración': m.administrationInstructions,
-      'Instrucciones de Conservación': m.conservationInstructions,
-      'Lugar de Dispensación': m.dispensationPlace,
+      'Grupo Farmacológico': m.pharmacologicalGroup || '',
+      'Principio Activo': m.activePrinciples || '',
+      'Acción Farmacológica': m.pharmacologicalAction || '',
+      'Instrucciones de Administración': m.administrationInstructions || '',
+      'Instrucciones de Conservación': m.conservationInstructions || '',
       'Información Adicional': m.additionalInfo || '',
       'Fecha de Creación': new Date(m.createdAt).toLocaleDateString('es-ES')
     }));
     const wsInventory = XLSX.utils.json_to_sheet(inventoryData);
     wsInventory['!cols'] = [
-      { wch: 15 }, { wch: 25 }, { wch: 25 }, { wch: 30 }, 
-      { wch: 30 }, { wch: 25 }, { wch: 20 }, { wch: 30 }, { wch: 15 }
+      { wch: 15 }, { wch: 25 }, { wch: 25 }, { wch: 25 },
+      { wch: 30 }, { wch: 30 }, { wch: 25 }, { wch: 30 }, { wch: 15 }
     ];
     XLSX.utils.book_append_sheet(wb, wsInventory, 'Inventario');
     

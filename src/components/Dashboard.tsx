@@ -27,7 +27,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     const medicines = StorageService.getMedicines();
     const treatments = StorageService.getTreatments();
     const activeTreatments = treatments.filter(t => t.isActive).length;
-    const pharmacologicalGroups = new Set(medicines.map(m => m.pharmacologicalAction.split(',')[0].trim()));
+    const pharmacologicalGroups = new Set(medicines.map(m => m.pharmacologicalGroup || m.pharmacologicalAction?.split(',')[0].trim()).filter(Boolean));
     const lastBackup = localStorage.getItem('pharmalocal_last_backup');
 
     setStats({
