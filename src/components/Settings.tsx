@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Upload, Trash2, AlertCircle, CheckCircle, FileSpreadsheet } from 'lucide-react';
 import { StorageService } from '../storage/localStorage';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 
 export const Settings: React.FC = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
