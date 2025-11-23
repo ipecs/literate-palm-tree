@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Plus, Calendar, Clock, Pill, FileText, Download, ChevronRight, Check, X, Edit2, Trash2, Printer, Package, Activity, Database } from 'lucide-react';
 import { StorageService } from '../storage/localStorage';
 import { Medicine } from '../types';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 
 interface SelectedMedicine {
   medicine: Medicine;
@@ -24,6 +24,217 @@ const REPORT_WARNINGS = [
   'Consulte al profesional de salud ante cualquier reacción adversa',
   'Mantenga los medicamentos fuera del alcance de niños'
 ] as const;
+
+const VISUAL_PLANNING_START_HOUR = 6;
+const VISUAL_PLANNING_HOURS = Array.from({ length: 24 }, (_, index) => (VISUAL_PLANNING_START_HOUR + index) % 24);
+
+const getEmojiForHour = (hour: number) => {
+  if (hour >= 6 && hour < 12) return '☀️';
+  if (hour >= 12 && hour < 18) return '🌤️';
+  if (hour >= 18 && hour < 22) return '🌙';
+  return '🛏️';
+};
+
+const extractHourFromText = (text?: string) => {
+  if (!text) return null;
+  const match = text.match(/([01]?\d|2[0-3]):[0-5]\d/);
+  return match ? parseInt(match[1], 10) : null;
+};
+
+const calculateHourFromSlotLabel = (label: string) => {
+  const matches = label.match(/(\d{2}):\d{2}/g);
+  if (!matches || matches.length === 0) {
+    return null;
+  }
+
+  const start = parseInt(matches[0].slice(0, 2), 10);
+  const end = matches[1] ? parseInt(matches[1].slice(0, 2), 10) : start;
+  const normalizedEnd = end >= start ? end : end + 24;
+  const midpoint = start + Math.floor((normalizedEnd - start) / 2);
+  return midpoint % 24;
+};
+
+const determineHourForEntry = (slotLabel: string, dosage: string, instructions: string) => {
+  const fromInstructions = extractHourFromText(instructions);
+  if (fromInstructions !== null) return fromInstructions;
+
+  const fromDosage = extractHourFromText(dosage);
+  if (fromDosage !== null) return fromDosage;
+
+  const fromSlot = calculateHourFromSlotLabel(slotLabel);
+  if (fromSlot !== null) return fromSlot;
+
+  return VISUAL_PLANNING_HOURS[0];
+};
+
+const formatDoseMarker = (dosage: string) => {
+  if (!dosage) return '💊';
+  const amount = dosage.match(/\d+/);
+  return `${amount ? amount[0] : '1'} 💊`;
+};
+
+const createVisualPlanningSheet = ({
+  patientName,
+  planDateLabel,
+  doseSchedule
+}: {
+  patientName: string;
+  planDateLabel: string;
+  doseSchedule: DoseSchedule[];
+}): XLSX.WorkSheet => {
+  const sheetRows: Array<Array<string | number>> = [];
+  const merges: XLSX.Range[] = [];
+  const medicineRows = new Set<number>();
+  const instructionRows = new Set<number>();
+  const placeholderRows = new Set<number>();
+  const highlightedCells = new Set<string>();
+  const totalColumns = VISUAL_PLANNING_HOURS.length + 1;
+
+  const padRow = (row: Array<string | number>) => (
+    row.length < totalColumns ? [...row, ...Array(totalColumns - row.length).fill('')] : row
+  );
+
+  const addRow = (row: Array<string | number>) => {
+    sheetRows.push(padRow(row));
+    return sheetRows.length - 1;
+  };
+
+  const mergeFullRow = (rowIndex: number) => {
+    merges.push({
+      s: { r: rowIndex, c: 0 },
+      e: { r: rowIndex, c: totalColumns - 1 }
+    });
+  };
+
+  const headerRowIndex = addRow(['PLANIFICACIÓN HORARIA DEL TRATAMIENTO']);
+  mergeFullRow(headerRowIndex);
+
+  const hospitalRowIndex = addRow(['Hospital / Centro: Unidad de Atención Farmacéutica']);
+  mergeFullRow(hospitalRowIndex);
+
+  const patientRowIndex = addRow([`Paciente: ${patientName || 'No especificado'} • Fecha del plan: ${planDateLabel}`]);
+  mergeFullRow(patientRowIndex);
+
+  const hoursRowIndex = addRow(['Hora', ...VISUAL_PLANNING_HOURS.map(hour => hour.toString().padStart(2, '0'))]);
+  const emojiRowIndex = addRow(['Momento', ...VISUAL_PLANNING_HOURS.map(hour => getEmojiForHour(hour))]);
+
+  const scheduledEntries = doseSchedule.flatMap(slot =>
+    slot.medicines.map(item => ({
+      slotLabel: slot.timeSlot,
+      dosage: item.dosage,
+      instructions: item.instructions,
+      hour: determineHourForEntry(slot.timeSlot, item.dosage, item.instructions),
+      medicine: item.medicine
+    }))
+  );
+
+  if (scheduledEntries.length === 0) {
+    const placeholderRowIndex = addRow(['No hay medicamentos programados en el calendario visual']);
+    mergeFullRow(placeholderRowIndex);
+    placeholderRows.add(placeholderRowIndex);
+  } else {
+    scheduledEntries.forEach(entry => {
+      const medicineRow = new Array(totalColumns).fill('');
+      medicineRow[0] = entry.dosage ? `${entry.medicine.comercialName}\n${entry.dosage}` : entry.medicine.comercialName;
+      const medicineRowIndex = addRow(medicineRow);
+      medicineRows.add(medicineRowIndex);
+
+      const hourIndex = VISUAL_PLANNING_HOURS.indexOf(entry.hour);
+      if (hourIndex !== -1) {
+        const columnIndex = hourIndex + 1;
+        sheetRows[medicineRowIndex][columnIndex] = formatDoseMarker(entry.dosage);
+        highlightedCells.add(XLSX.utils.encode_cell({ r: medicineRowIndex, c: columnIndex }));
+      }
+
+      const instructionDescription = entry.instructions?.trim()
+        ? entry.instructions.trim()
+        : `Horario: ${entry.slotLabel} | Dosis: ${entry.dosage || 'Sin especificar'}`;
+
+      const instructionRow = new Array(totalColumns).fill('');
+      instructionRow[0] = instructionDescription;
+      const instructionRowIndex = addRow(instructionRow);
+      instructionRows.add(instructionRowIndex);
+      mergeFullRow(instructionRowIndex);
+    });
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(sheetRows);
+  ws['!merges'] = merges;
+  ws['!cols'] = [
+    { wch: 30 },
+    ...VISUAL_PLANNING_HOURS.map(() => ({ wch: 5 }))
+  ];
+  ws['!rows'] = sheetRows.map((_, index) => {
+    if (index === headerRowIndex) return { hpt: 32 };
+    if (index === hoursRowIndex || index === emojiRowIndex) return { hpt: 20 };
+    if (medicineRows.has(index)) return { hpt: 28 };
+    if (instructionRows.has(index)) return { hpt: 24 };
+    if (placeholderRows.has(index)) return { hpt: 24 };
+    return { hpt: 20 };
+  });
+
+  const baseBorder = {
+    top: { style: 'thin', color: { rgb: '000000' } },
+    bottom: { style: 'thin', color: { rgb: '000000' } },
+    left: { style: 'thin', color: { rgb: '000000' } },
+    right: { style: 'thin', color: { rgb: '000000' } }
+  } as const;
+
+  const ensureCell = (r: number, c: number) => {
+    const cellRef = XLSX.utils.encode_cell({ r, c });
+    if (!ws[cellRef]) {
+      ws[cellRef] = { t: 's', v: '' };
+    }
+    return { cellRef, cell: ws[cellRef] as XLSX.CellObject };
+  };
+
+  for (let r = 0; r < sheetRows.length; r++) {
+    for (let c = 0; c < totalColumns; c++) {
+      const { cellRef, cell } = ensureCell(r, c);
+      const cellStyle: XLSX.CellStyle = {
+        font: { name: 'Arial', sz: 11, color: { rgb: '0F172A' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: { ...baseBorder },
+        fill: { patternType: 'solid', fgColor: { rgb: 'FFFFFF' } }
+      };
+
+      if (r === headerRowIndex) {
+        cellStyle.font = { name: 'Arial', sz: 18, bold: true, color: { rgb: '0F172A' } };
+      } else if (r === hospitalRowIndex || r === patientRowIndex) {
+        cellStyle.font!.bold = true;
+        cellStyle.fill = { patternType: 'solid', fgColor: { rgb: 'F3FAFE' } };
+      } else if (r === hoursRowIndex) {
+        cellStyle.font!.bold = true;
+        cellStyle.fill = { patternType: 'solid', fgColor: { rgb: 'B2EBF2' } };
+      } else if (r === emojiRowIndex) {
+        cellStyle.fill = { patternType: 'solid', fgColor: { rgb: 'E0F7FA' } };
+      } else if (medicineRows.has(r)) {
+        if (c === 0) {
+          cellStyle.font!.bold = true;
+          cellStyle.font!.sz = 14;
+          cellStyle.fill = { patternType: 'solid', fgColor: { rgb: 'E0F2F1' } };
+        } else {
+          const isHighlighted = highlightedCells.has(cellRef);
+          cellStyle.fill = { patternType: 'solid', fgColor: { rgb: isHighlighted ? 'FFFFFF' : 'E8F5FE' } };
+          if (isHighlighted) {
+            cellStyle.font!.bold = true;
+            cellStyle.font!.sz = 12;
+          }
+        }
+      } else if (instructionRows.has(r)) {
+        cellStyle.fill = { patternType: 'solid', fgColor: { rgb: 'D6F1F5' } };
+        cellStyle.font!.italic = true;
+      } else if (placeholderRows.has(r)) {
+        cellStyle.fill = { patternType: 'solid', fgColor: { rgb: 'FFF3CD' } };
+        cellStyle.font!.italic = true;
+      }
+
+      cell.s = cellStyle;
+    }
+  }
+
+  return ws;
+};
 
 export const TreatmentDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'selection' | 'information' | 'calendar' | 'report' | 'database'>('dashboard');
@@ -272,6 +483,13 @@ export const TreatmentDashboard: React.FC = () => {
     const wsWarnings = XLSX.utils.json_to_sheet(warningsData);
     wsWarnings['!cols'] = [{ wch: 35 }, { wch: 60 }];
     XLSX.utils.book_append_sheet(wb, wsWarnings, 'Advertencias');
+
+    const wsPlanningVisual = createVisualPlanningSheet({
+      patientName,
+      planDateLabel: planDate,
+      doseSchedule
+    });
+    XLSX.utils.book_append_sheet(wb, wsPlanningVisual, 'Planning Visual');
 
     const normalizedPatientName = (patientName || 'paciente')
       .trim()
