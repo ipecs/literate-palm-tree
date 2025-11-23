@@ -1,12 +1,12 @@
 export interface Medicine {
   id: string;
   comercialName: string;
-  activePrinciples: string;
-  pharmacologicalAction: string;
-  administrationInstructions: string;
-  conservationInstructions: string;
-  dispensationPlace: string;
-  additionalInfo: string;
+  activePrinciples?: string;
+  pharmacologicalGroup?: string;
+  pharmacologicalAction?: string;
+  administrationInstructions?: string;
+  conservationInstructions?: string;
+  additionalInfo?: string;
   imageUrl?: string;
   iconType?: 'pill' | 'syrup' | 'injection' | 'capsule' | 'cream';
   createdAt: number;
@@ -29,6 +29,12 @@ export interface TreatmentDose {
   time: string;
   dosage: string;
   specificInstructions?: string;
+}
+
+export interface TimelineScheduleEntry {
+  medicineId: string;
+  hours: number[];
+  instructions?: string;
 }
 
 export interface Treatment {
