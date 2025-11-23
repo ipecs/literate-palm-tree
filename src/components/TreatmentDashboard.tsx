@@ -9,6 +9,11 @@ interface SelectedMedicine {
   selected: boolean;
 }
 
+interface ScheduleEntryWithMedicine {
+  entry: TimelineScheduleEntry;
+  medicine: Medicine;
+}
+
 const REPORT_WARNINGS = [
   'Siga estrictamente las dosis y horarios indicados',
   'No suspenda el tratamiento sin consulta médica',
@@ -108,6 +113,13 @@ export const TreatmentDashboard: React.FC = () => {
     exportToExcel(formattedData, 'inventario_medicamentos', 'Inventario');
   };
 
+  const getHourEmoji = (hour: number): string => {
+    if (hour >= 6 && hour <= 12) return '☀️';
+    if (hour >= 13 && hour <= 18) return '🌤️';
+    if (hour >= 19 && hour <= 23) return '🌙';
+    return '🛏️';
+  };
+
   const exportReportToExcel = () => {
     if (!showReport) {
       alert('Por favor genera el informe antes de exportar');
@@ -124,6 +136,13 @@ export const TreatmentDashboard: React.FC = () => {
       minute: '2-digit'
     });
 
+    const scheduleEntriesWithMedicine: ScheduleEntryWithMedicine[] = timelineSchedule
+      .map(entry => {
+        const medicine = medicines.find(m => m.id === entry.medicineId);
+        return medicine ? { entry, medicine } : null;
+      })
+      .filter((item): item is ScheduleEntryWithMedicine => Boolean(item));
+
     const headerData = [
       { Campo: 'INFORME', Valor: 'PLAN DE TRATAMIENTO FARMACOLÓGICO' },
       { Campo: 'Sistema', Valor: 'Sistema de Gestión Farmacéutica PharmaLocal' },
@@ -134,7 +153,7 @@ export const TreatmentDashboard: React.FC = () => {
       { Campo: '', Valor: '' }
     ];
 
-    const hasScheduledMedicines = timelineSchedule.length > 0;
+    const hasScheduledMedicines = scheduleEntriesWithMedicine.length > 0;
 
     const scheduleData: Array<Record<string, string>> = [{
       Horario: 'PAUTA HORARIA DE ADMINISTRACIÓN',
@@ -146,19 +165,16 @@ export const TreatmentDashboard: React.FC = () => {
     }];
 
     if (hasScheduledMedicines) {
-      timelineSchedule.forEach(entry => {
-        const medicine = medicines.find(m => m.id === entry.medicineId);
-        if (medicine) {
-          const hoursText = entry.hours.map(h => getHourLabel(h)).join(', ');
-          scheduleData.push({
-            Horario: '',
-            Medicamento: medicine.comercialName,
-            'Principio Activo': medicine.activePrinciples || '',
-            'Grupo Farmacológico': medicine.pharmacologicalGroup || medicine.pharmacologicalAction?.split(',')[0].trim() || '',
-            Horarios: hoursText,
-            Instrucciones: entry.instructions || ''
-          });
-        }
+      scheduleEntriesWithMedicine.forEach(({ entry, medicine }) => {
+        const hoursText = entry.hours.map(h => getHourLabel(h)).join(', ');
+        scheduleData.push({
+          Horario: '',
+          Medicamento: medicine.comercialName,
+          'Principio Activo': medicine.activePrinciples || '',
+          'Grupo Farmacológico': medicine.pharmacologicalGroup || medicine.pharmacologicalAction?.split(',')[0].trim() || '',
+          Horarios: hoursText,
+          Instrucciones: entry.instructions || ''
+        });
       });
     } else {
       scheduleData.push({
@@ -197,6 +213,147 @@ export const TreatmentDashboard: React.FC = () => {
     const wsWarnings = XLSX.utils.json_to_sheet(warningsData);
     wsWarnings['!cols'] = [{ wch: 35 }, { wch: 60 }];
     XLSX.utils.book_append_sheet(wb, wsWarnings, 'Advertencias');
+
+    const buildPlanningVisualSheet = () => {
+      const worksheet: XLSX.WorkSheet = {};
+      const merges: XLSX.Range[] = [];
+      const rowHeights: { hpt?: number }[] = [];
+      const planningHours = Array.from({ length: 24 }, (_, index) => (index + 6) % 24);
+      const totalColumns = planningHours.length + 1;
+      const lastColumnIndex = totalColumns - 1;
+
+      const thinBorder = {
+        top: { style: 'thin' as const, color: { rgb: '000000' } },
+        bottom: { style: 'thin' as const, color: { rgb: '000000' } },
+        left: { style: 'thin' as const, color: { rgb: '000000' } },
+        right: { style: 'thin' as const, color: { rgb: '000000' } }
+      };
+
+      const baseStyle: XLSX.CellStyle = {
+        alignment: { vertical: 'center', horizontal: 'center', wrapText: true },
+        border: thinBorder
+      };
+
+      const applyStyle = (style: Partial<XLSX.CellStyle> = {}): XLSX.CellStyle => ({
+        ...baseStyle,
+        ...style,
+        alignment: {
+          ...(baseStyle.alignment || {}),
+          ...(style.alignment || {})
+        },
+        border: style.border || thinBorder
+      });
+
+      const setCell = (rowNumber: number, columnNumber: number, value: string, style: Partial<XLSX.CellStyle> = {}) => {
+        const cellAddress = XLSX.utils.encode_cell({ r: rowNumber - 1, c: columnNumber - 1 });
+        worksheet[cellAddress] = { v: value, t: 's', s: applyStyle(style) };
+      };
+
+      const setRowHeight = (rowNumber: number, height: number) => {
+        rowHeights[rowNumber - 1] = { hpt: height };
+      };
+
+      const formatHour = (hour: number) => `${hour.toString().padStart(2, '0')}:00`;
+
+      let currentRow = 1;
+
+      setCell(currentRow, 1, 'PLANIFICACIÓN HORARIA DEL TRATAMIENTO', {
+        font: { bold: true, sz: 20, color: { rgb: '0C395C' } },
+        fill: { patternType: 'solid', fgColor: { rgb: 'FFFFFF' } }
+      });
+      merges.push({ s: { r: currentRow - 1, c: 0 }, e: { r: currentRow - 1, c: lastColumnIndex } });
+      setRowHeight(currentRow, 32);
+      currentRow++;
+
+      const patientLabel = patientName || 'No especificado';
+      setCell(currentRow, 1, `Hospital General - Servicio de Farmacia | Paciente: ${patientLabel} | Fecha: ${planDate}`, {
+        font: { bold: true, sz: 12, color: { rgb: '0C395C' } },
+        fill: { patternType: 'solid', fgColor: { rgb: 'E0F2F1' } }
+      });
+      merges.push({ s: { r: currentRow - 1, c: 0 }, e: { r: currentRow - 1, c: lastColumnIndex } });
+      setRowHeight(currentRow, 24);
+      currentRow++;
+
+      setCell(currentRow, 1, 'Medicamento', {
+        font: { bold: true, color: { rgb: '0C395C' } },
+        fill: { patternType: 'solid', fgColor: { rgb: 'D7ECFB' } }
+      });
+
+      planningHours.forEach((hour, index) => {
+        const columnIndex = index + 2;
+        setCell(currentRow, columnIndex, `${formatHour(hour)}\n${getHourEmoji(hour)}`, {
+          font: { bold: true, color: { rgb: '0C395C' } },
+          fill: { patternType: 'solid', fgColor: { rgb: 'D7ECFB' } }
+        });
+      });
+      setRowHeight(currentRow, 46);
+      currentRow++;
+
+      const sortedEntries = [...scheduleEntriesWithMedicine].sort((a, b) =>
+        a.medicine.comercialName.localeCompare(b.medicine.comercialName)
+      );
+
+      let nextRow = currentRow;
+
+      if (sortedEntries.length === 0) {
+        setCell(nextRow, 1, 'Sin medicamentos planificados en el calendario', {
+          font: { bold: true, color: { rgb: 'B26A00' } },
+          fill: { patternType: 'solid', fgColor: { rgb: 'FFF9C4' } }
+        });
+        merges.push({ s: { r: nextRow - 1, c: 0 }, e: { r: nextRow - 1, c: lastColumnIndex } });
+        setRowHeight(nextRow, 28);
+        nextRow++;
+      } else {
+        sortedEntries.forEach(({ entry, medicine }) => {
+          setCell(nextRow, 1, medicine.comercialName, {
+            font: { bold: true, sz: 14, color: { rgb: '0D47A1' } },
+            fill: { patternType: 'solid', fgColor: { rgb: 'C8E6FA' } }
+          });
+
+          planningHours.forEach((hour, index) => {
+            const columnIndex = index + 2;
+            const hasDose = entry.hours.includes(hour);
+            setCell(nextRow, columnIndex, hasDose ? '1 💊' : '', {
+              font: hasDose ? { bold: true, sz: 14, color: { rgb: '0D47A1' } } : { sz: 11, color: { rgb: '90A4AE' } },
+              fill: {
+                patternType: 'solid',
+                fgColor: { rgb: hasDose ? 'FFFFFF' : 'E8F4FD' }
+              }
+            });
+          });
+
+          setRowHeight(nextRow, 32);
+          nextRow++;
+
+          const instructionsText = entry.instructions?.trim() || 'Sin instrucciones adicionales registradas.';
+          setCell(nextRow, 1, `Instrucciones: ${instructionsText}`, {
+            font: { italic: true, color: { rgb: '004D40' } },
+            fill: { patternType: 'solid', fgColor: { rgb: 'E0F7FA' } }
+          });
+          merges.push({ s: { r: nextRow - 1, c: 0 }, e: { r: nextRow - 1, c: lastColumnIndex } });
+          setRowHeight(nextRow, 24);
+          nextRow++;
+        });
+      }
+
+      worksheet['!cols'] = [
+        { wch: 30 },
+        ...planningHours.map(() => ({ wch: 6 }))
+      ];
+      worksheet['!rows'] = rowHeights;
+      worksheet['!merges'] = merges;
+
+      const lastUsedRow = Math.max(nextRow - 1, 3);
+      worksheet['!ref'] = XLSX.utils.encode_range({
+        s: { r: 0, c: 0 },
+        e: { r: lastUsedRow - 1, c: lastColumnIndex }
+      });
+
+      return worksheet;
+    };
+
+    const planningSheet = buildPlanningVisualSheet();
+    XLSX.utils.book_append_sheet(wb, planningSheet, 'Planning Visual');
 
     const normalizedPatientName = (patientName || 'paciente')
       .trim()
