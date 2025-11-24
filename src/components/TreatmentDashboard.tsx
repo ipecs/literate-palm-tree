@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Calendar, Clock, Pill, FileText, Download, ChevronRight, Check, X, Edit2, Trash2, Printer, Package, Activity, Database } from 'lucide-react';
+import { Search, Plus, Calendar, Pill, FileText, Download, ChevronRight, Check, X, Edit2, Trash2, Printer, Package, Activity, Database } from 'lucide-react';
 import { StorageService } from '../storage/localStorage';
-import { Medicine } from '../types';
+import { Medicine, TimelineScheduleEntry } from '../types';
 import * as XLSX from 'xlsx-js-style';
 
 interface SelectedMedicine {
@@ -9,13 +9,9 @@ interface SelectedMedicine {
   selected: boolean;
 }
 
-interface DoseSchedule {
-  timeSlot: string;
-  medicines: Array<{
-    medicine: Medicine;
-    dosage: string;
-    instructions: string;
-  }>;
+interface ScheduleEntryWithMedicine {
+  entry: TimelineScheduleEntry;
+  medicine: Medicine;
 }
 
 const REPORT_WARNINGS = [
@@ -25,239 +21,22 @@ const REPORT_WARNINGS = [
   'Mantenga los medicamentos fuera del alcance de niños'
 ] as const;
 
-const VISUAL_PLANNING_START_HOUR = 6;
-const VISUAL_PLANNING_HOURS = Array.from({ length: 24 }, (_, index) => (VISUAL_PLANNING_START_HOUR + index) % 24);
-
-const getEmojiForHour = (hour: number) => {
-  if (hour >= 6 && hour <= 12) return '☀️';
-  if (hour >= 13 && hour <= 18) return '🌤️';
-  if (hour >= 19 && hour <= 23) return '🌙';
-  return '🛏️';
-};
-
-const extractHourFromText = (text?: string) => {
-  if (!text) return null;
-  const match = text.match(/([01]?\d|2[0-3]):[0-5]\d/);
-  return match ? parseInt(match[1], 10) : null;
-};
-
-const calculateHourFromSlotLabel = (label: string) => {
-  const matches = label.match(/(\d{2}):\d{2}/g);
-  if (!matches || matches.length === 0) {
-    return null;
-  }
-
-  const start = parseInt(matches[0].slice(0, 2), 10);
-  const end = matches[1] ? parseInt(matches[1].slice(0, 2), 10) : start;
-  const normalizedEnd = end >= start ? end : end + 24;
-  const midpoint = start + Math.floor((normalizedEnd - start) / 2);
-  return midpoint % 24;
-};
-
-const determineHourForEntry = (slotLabel: string, dosage: string, instructions: string) => {
-  const fromInstructions = extractHourFromText(instructions);
-  if (fromInstructions !== null) return fromInstructions;
-
-  const fromDosage = extractHourFromText(dosage);
-  if (fromDosage !== null) return fromDosage;
-
-  const fromSlot = calculateHourFromSlotLabel(slotLabel);
-  if (fromSlot !== null) return fromSlot;
-
-  return VISUAL_PLANNING_HOURS[0];
-};
-
-const formatDoseMarker = (dosage: string) => {
-  if (!dosage) return '💊';
-  const amount = dosage.match(/\d+/);
-  return `${amount ? amount[0] : '1'} 💊`;
-};
-
-const createVisualPlanningSheet = ({
-  patientName,
-  planDateLabel,
-  doseSchedule
-}: {
-  patientName: string;
-  planDateLabel: string;
-  doseSchedule: DoseSchedule[];
-}): XLSX.WorkSheet => {
-  const sheetRows: Array<Array<string | number>> = [];
-  const merges: XLSX.Range[] = [];
-  const medicineRows = new Set<number>();
-  const instructionRows = new Set<number>();
-  const placeholderRows = new Set<number>();
-  const highlightedCells = new Set<string>();
-  const totalColumns = VISUAL_PLANNING_HOURS.length + 1;
-
-  const padRow = (row: Array<string | number>) => (
-    row.length < totalColumns ? [...row, ...Array(totalColumns - row.length).fill('')] : row
-  );
-
-  const addRow = (row: Array<string | number>) => {
-    sheetRows.push(padRow(row));
-    return sheetRows.length - 1;
-  };
-
-  const mergeFullRow = (rowIndex: number) => {
-    merges.push({
-      s: { r: rowIndex, c: 0 },
-      e: { r: rowIndex, c: totalColumns - 1 }
-    });
-  };
-
-  const headerRowIndex = addRow(['PLANIFICACIÓN HORARIA DEL TRATAMIENTO']);
-  mergeFullRow(headerRowIndex);
-
-  const hospitalRowIndex = addRow(['Hospital / Centro: Unidad de Atención Farmacéutica']);
-  mergeFullRow(hospitalRowIndex);
-
-  const patientRowIndex = addRow([`Paciente: ${patientName || 'No especificado'} • Fecha del plan: ${planDateLabel}`]);
-  mergeFullRow(patientRowIndex);
-
-  const hoursRowIndex = addRow(['Hora', ...VISUAL_PLANNING_HOURS.map(hour => (hour === 0 ? '0' : hour.toString()))]);
-  const emojiRowIndex = addRow(['Momento', ...VISUAL_PLANNING_HOURS.map(hour => getEmojiForHour(hour))]);
-
-  const scheduledEntries = doseSchedule.flatMap(slot =>
-    slot.medicines.map(item => ({
-      slotLabel: slot.timeSlot,
-      dosage: item.dosage,
-      instructions: item.instructions,
-      hour: determineHourForEntry(slot.timeSlot, item.dosage, item.instructions),
-      medicine: item.medicine
-    }))
-  );
-
-  if (scheduledEntries.length === 0) {
-    const placeholderRowIndex = addRow(['No hay medicamentos programados en el calendario visual']);
-    mergeFullRow(placeholderRowIndex);
-    placeholderRows.add(placeholderRowIndex);
-  } else {
-    scheduledEntries.forEach(entry => {
-      const medicineRow = new Array(totalColumns).fill('');
-      medicineRow[0] = entry.dosage ? `${entry.medicine.comercialName}\n${entry.dosage}` : entry.medicine.comercialName;
-      const medicineRowIndex = addRow(medicineRow);
-      medicineRows.add(medicineRowIndex);
-
-      const hourIndex = VISUAL_PLANNING_HOURS.indexOf(entry.hour);
-      if (hourIndex !== -1) {
-        const columnIndex = hourIndex + 1;
-        sheetRows[medicineRowIndex][columnIndex] = formatDoseMarker(entry.dosage);
-        highlightedCells.add(XLSX.utils.encode_cell({ r: medicineRowIndex, c: columnIndex }));
-      }
-
-      const instructionDescription = entry.instructions?.trim()
-        ? entry.instructions.trim()
-        : `Horario: ${entry.slotLabel} | Dosis: ${entry.dosage || 'Sin especificar'}`;
-
-      const instructionRow = new Array(totalColumns).fill('');
-      instructionRow[0] = instructionDescription;
-      const instructionRowIndex = addRow(instructionRow);
-      instructionRows.add(instructionRowIndex);
-      mergeFullRow(instructionRowIndex);
-    });
-  }
-
-  const ws = XLSX.utils.aoa_to_sheet(sheetRows);
-  ws['!merges'] = merges;
-  ws['!cols'] = [
-    { wch: 30 },
-    ...VISUAL_PLANNING_HOURS.map(() => ({ wch: 5 }))
-  ];
-  ws['!rows'] = sheetRows.map((_, index) => {
-    if (index === headerRowIndex) return { hpt: 32 };
-    if (index === hoursRowIndex || index === emojiRowIndex) return { hpt: 20 };
-    if (medicineRows.has(index)) return { hpt: 28 };
-    if (instructionRows.has(index)) return { hpt: 24 };
-    if (placeholderRows.has(index)) return { hpt: 24 };
-    return { hpt: 20 };
-  });
-
-  const baseBorder = {
-    top: { style: 'thin', color: { rgb: '000000' } },
-    bottom: { style: 'thin', color: { rgb: '000000' } },
-    left: { style: 'thin', color: { rgb: '000000' } },
-    right: { style: 'thin', color: { rgb: '000000' } }
-  } as const;
-
-  const ensureCell = (r: number, c: number) => {
-    const cellRef = XLSX.utils.encode_cell({ r, c });
-    if (!ws[cellRef]) {
-      ws[cellRef] = { t: 's', v: '' };
-    }
-    return { cellRef, cell: ws[cellRef] as XLSX.CellObject };
-  };
-
-  for (let r = 0; r < sheetRows.length; r++) {
-    for (let c = 0; c < totalColumns; c++) {
-      const { cellRef, cell } = ensureCell(r, c);
-      const cellStyle: XLSX.CellStyle = {
-        font: { name: 'Arial', sz: 11, color: { rgb: '0F172A' } },
-        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
-        border: { ...baseBorder },
-        fill: { patternType: 'solid', fgColor: { rgb: 'FFFFFF' } }
-      };
-
-      if (r === headerRowIndex) {
-        cellStyle.font = { name: 'Arial', sz: 18, bold: true, color: { rgb: '0F172A' } };
-      } else if (r === hospitalRowIndex || r === patientRowIndex) {
-        cellStyle.font!.bold = true;
-        cellStyle.fill = { patternType: 'solid', fgColor: { rgb: 'F3FAFE' } };
-      } else if (r === hoursRowIndex) {
-        cellStyle.font!.bold = true;
-        cellStyle.fill = { patternType: 'solid', fgColor: { rgb: 'B2EBF2' } };
-      } else if (r === emojiRowIndex) {
-        cellStyle.fill = { patternType: 'solid', fgColor: { rgb: 'E0F7FA' } };
-      } else if (medicineRows.has(r)) {
-        if (c === 0) {
-          cellStyle.font!.bold = true;
-          cellStyle.font!.sz = 14;
-          cellStyle.fill = { patternType: 'solid', fgColor: { rgb: 'E0F2F1' } };
-        } else {
-          const isHighlighted = highlightedCells.has(cellRef);
-          cellStyle.fill = { patternType: 'solid', fgColor: { rgb: isHighlighted ? 'FFFFFF' : 'E8F5FE' } };
-          if (isHighlighted) {
-            cellStyle.font!.bold = true;
-            cellStyle.font!.sz = 12;
-          }
-        }
-      } else if (instructionRows.has(r)) {
-        cellStyle.fill = { patternType: 'solid', fgColor: { rgb: 'D6F1F5' } };
-        cellStyle.font!.italic = true;
-      } else if (placeholderRows.has(r)) {
-        cellStyle.fill = { patternType: 'solid', fgColor: { rgb: 'FFF3CD' } };
-        cellStyle.font!.italic = true;
-      }
-
-      cell.s = cellStyle;
-    }
-  }
-
-  return ws;
-};
-
 export const TreatmentDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'selection' | 'information' | 'calendar' | 'report' | 'database'>('dashboard');
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMedicines, setSelectedMedicines] = useState<SelectedMedicine[]>([]);
   const [patientName, setPatientName] = useState('');
-  const [doseSchedule, setDoseSchedule] = useState<DoseSchedule[]>([
-    { timeSlot: 'Desayuno (07:00-09:00)', medicines: [] },
-    { timeSlot: 'Comida (12:00-14:00)', medicines: [] },
-    { timeSlot: 'Cena (18:00-20:00)', medicines: [] },
-    { timeSlot: 'Noche (21:00-23:00)', medicines: [] }
-  ]);
+  const [timelineSchedule, setTimelineSchedule] = useState<TimelineScheduleEntry[]>([]);
   const [showReport, setShowReport] = useState(false);
   const [showMedicineModal, setShowMedicineModal] = useState(false);
   const [editingMedicine, setEditingMedicine] = useState<Medicine | null>(null);
   const [medicineFormData, setMedicineFormData] = useState({
     comercialName: '',
     activePrinciples: '',
-    pharmacologicalAction: '',
+    pharmacologicalGroup: '',
     administrationInstructions: '',
     conservationInstructions: '',
-    dispensationPlace: '',
     additionalInfo: '',
     imageUrl: '',
     iconType: 'pill' as 'pill' | 'syrup' | 'injection' | 'capsule' | 'cream'
@@ -277,13 +56,13 @@ export const TreatmentDashboard: React.FC = () => {
   };
 
   const getTotalPharmacologicalGroups = () => {
-    const groups = new Set(medicines.map(m => m.pharmacologicalAction.split(',')[0].trim()));
+    const groups = new Set(medicines.map(m => m.pharmacologicalGroup || m.pharmacologicalAction?.split(',')[0].trim()).filter(Boolean));
     return groups.size;
   };
 
   const filteredMedicines = medicines.filter(m =>
     m.comercialName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.activePrinciples.toLowerCase().includes(searchTerm.toLowerCase())
+    (m.activePrinciples?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   );
 
   const toggleMedicineSelection = (medicine: Medicine) => {
@@ -295,50 +74,6 @@ export const TreatmentDashboard: React.FC = () => {
         return [...prev, { medicine, selected: true }];
       }
     });
-  };
-
-  const addMedicineToSchedule = (medicine: Medicine, timeSlot: string) => {
-    setDoseSchedule(prev => prev.map(slot => {
-      if (slot.timeSlot === timeSlot) {
-        return {
-          ...slot,
-          medicines: [...slot.medicines, {
-            medicine,
-            dosage: '1 unidad',
-            instructions: ''
-          }]
-        };
-      }
-      return slot;
-    }));
-  };
-
-  const updateScheduleItem = (timeSlot: string, medicineId: string, field: 'dosage' | 'instructions', value: string) => {
-    setDoseSchedule(prev => prev.map(slot => {
-      if (slot.timeSlot === timeSlot) {
-        return {
-          ...slot,
-          medicines: slot.medicines.map(item => 
-            item.medicine.id === medicineId 
-              ? { ...item, [field]: value }
-              : item
-          )
-        };
-      }
-      return slot;
-    }));
-  };
-
-  const removeFromSchedule = (timeSlot: string, medicineId: string) => {
-    setDoseSchedule(prev => prev.map(slot => {
-      if (slot.timeSlot === timeSlot) {
-        return {
-          ...slot,
-          medicines: slot.medicines.filter(item => item.medicine.id !== medicineId)
-        };
-      }
-      return slot;
-    }));
   };
 
   const getMedicineIcon = (iconType: string) => {
@@ -366,16 +101,23 @@ export const TreatmentDashboard: React.FC = () => {
   const exportMedicinesToExcel = () => {
     const formattedData = medicines.map(m => ({
       'Nombre Comercial': m.comercialName,
-      'Principio Activo': m.activePrinciples,
-      'Acción Farmacológica': m.pharmacologicalAction,
-      'Administración': m.administrationInstructions,
-      'Conservación': m.conservationInstructions,
-      'Lugar de Dispensación': m.dispensationPlace,
+      'Grupo Farmacológico': m.pharmacologicalGroup || '',
+      'Principio Activo': m.activePrinciples || '',
+      'Acción Farmacológica': m.pharmacologicalAction || '',
+      'Administración': m.administrationInstructions || '',
+      'Conservación': m.conservationInstructions || '',
       'Información Adicional': m.additionalInfo || '',
       'Fecha de Creación': new Date(m.createdAt).toLocaleDateString('es-ES')
     }));
     
     exportToExcel(formattedData, 'inventario_medicamentos', 'Inventario');
+  };
+
+  const getHourEmoji = (hour: number): string => {
+    if (hour >= 6 && hour <= 12) return '☀️';
+    if (hour >= 13 && hour <= 18) return '🌤️';
+    if (hour >= 19 && hour <= 23) return '🌙';
+    return '🛏️';
   };
 
   const exportReportToExcel = () => {
@@ -394,6 +136,13 @@ export const TreatmentDashboard: React.FC = () => {
       minute: '2-digit'
     });
 
+    const scheduleEntriesWithMedicine: ScheduleEntryWithMedicine[] = timelineSchedule
+      .map(entry => {
+        const medicine = medicines.find(m => m.id === entry.medicineId);
+        return medicine ? { entry, medicine } : null;
+      })
+      .filter((item): item is ScheduleEntryWithMedicine => Boolean(item));
+
     const headerData = [
       { Campo: 'INFORME', Valor: 'PLAN DE TRATAMIENTO FARMACOLÓGICO' },
       { Campo: 'Sistema', Valor: 'Sistema de Gestión Farmacéutica PharmaLocal' },
@@ -404,55 +153,36 @@ export const TreatmentDashboard: React.FC = () => {
       { Campo: '', Valor: '' }
     ];
 
-    const hasScheduledMedicines = doseSchedule.some(slot => slot.medicines.length > 0);
+    const hasScheduledMedicines = scheduleEntriesWithMedicine.length > 0;
 
     const scheduleData: Array<Record<string, string>> = [{
       Horario: 'PAUTA HORARIA DE ADMINISTRACIÓN',
       Medicamento: '',
       'Principio Activo': '',
       'Grupo Farmacológico': '',
-      Dosis: '',
+      Horarios: '',
       Instrucciones: ''
     }];
 
-    doseSchedule.filter(slot => slot.medicines.length > 0).forEach(slot => {
-      scheduleData.push({
-        Horario: `═══ ${slot.timeSlot} ═══`,
-        Medicamento: '',
-        'Principio Activo': '',
-        'Grupo Farmacológico': '',
-        Dosis: '',
-        Instrucciones: ''
-      });
-
-      slot.medicines.forEach(item => {
+    if (hasScheduledMedicines) {
+      scheduleEntriesWithMedicine.forEach(({ entry, medicine }) => {
+        const hoursText = entry.hours.map(h => getHourLabel(h)).join(', ');
         scheduleData.push({
           Horario: '',
-          Medicamento: item.medicine.comercialName,
-          'Principio Activo': item.medicine.activePrinciples,
-          'Grupo Farmacológico': item.medicine.pharmacologicalAction.split(',')[0].trim(),
-          Dosis: item.dosage,
-          Instrucciones: item.instructions || ''
+          Medicamento: medicine.comercialName,
+          'Principio Activo': medicine.activePrinciples || '',
+          'Grupo Farmacológico': medicine.pharmacologicalGroup || medicine.pharmacologicalAction?.split(',')[0].trim() || '',
+          Horarios: hoursText,
+          Instrucciones: entry.instructions || ''
         });
       });
-
-      scheduleData.push({
-        Horario: '',
-        Medicamento: '',
-        'Principio Activo': '',
-        'Grupo Farmacológico': '',
-        Dosis: '',
-        Instrucciones: ''
-      });
-    });
-
-    if (!hasScheduledMedicines) {
+    } else {
       scheduleData.push({
         Horario: 'Sin medicamentos asignados en el calendario',
         Medicamento: '',
         'Principio Activo': '',
         'Grupo Farmacológico': '',
-        Dosis: '',
+        Horarios: '',
         Instrucciones: ''
       });
     }
@@ -471,11 +201,11 @@ export const TreatmentDashboard: React.FC = () => {
 
     const wsSchedule = XLSX.utils.json_to_sheet(scheduleData);
     wsSchedule['!cols'] = [
-      { wch: 30 },
-      { wch: 25 },
-      { wch: 25 },
-      { wch: 25 },
       { wch: 15 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 30 },
       { wch: 35 }
     ];
     XLSX.utils.book_append_sheet(wb, wsSchedule, 'Pauta Horaria');
@@ -484,12 +214,146 @@ export const TreatmentDashboard: React.FC = () => {
     wsWarnings['!cols'] = [{ wch: 35 }, { wch: 60 }];
     XLSX.utils.book_append_sheet(wb, wsWarnings, 'Advertencias');
 
-    const wsPlanningVisual = createVisualPlanningSheet({
-      patientName,
-      planDateLabel: planDate,
-      doseSchedule
-    });
-    XLSX.utils.book_append_sheet(wb, wsPlanningVisual, 'Planning Visual');
+    const buildPlanningVisualSheet = () => {
+      const worksheet: XLSX.WorkSheet = {};
+      const merges: XLSX.Range[] = [];
+      const rowHeights: { hpt?: number }[] = [];
+      const planningHours = Array.from({ length: 24 }, (_, index) => (index + 6) % 24);
+      const totalColumns = planningHours.length + 1;
+      const lastColumnIndex = totalColumns - 1;
+
+      const thinBorder = {
+        top: { style: 'thin' as const, color: { rgb: '000000' } },
+        bottom: { style: 'thin' as const, color: { rgb: '000000' } },
+        left: { style: 'thin' as const, color: { rgb: '000000' } },
+        right: { style: 'thin' as const, color: { rgb: '000000' } }
+      };
+
+      const baseStyle: XLSX.CellStyle = {
+        alignment: { vertical: 'center', horizontal: 'center', wrapText: true },
+        border: thinBorder
+      };
+
+      const applyStyle = (style: Partial<XLSX.CellStyle> = {}): XLSX.CellStyle => ({
+        ...baseStyle,
+        ...style,
+        alignment: {
+          ...(baseStyle.alignment || {}),
+          ...(style.alignment || {})
+        },
+        border: style.border || thinBorder
+      });
+
+      const setCell = (rowNumber: number, columnNumber: number, value: string, style: Partial<XLSX.CellStyle> = {}) => {
+        const cellAddress = XLSX.utils.encode_cell({ r: rowNumber - 1, c: columnNumber - 1 });
+        worksheet[cellAddress] = { v: value, t: 's', s: applyStyle(style) };
+      };
+
+      const setRowHeight = (rowNumber: number, height: number) => {
+        rowHeights[rowNumber - 1] = { hpt: height };
+      };
+
+      const formatHour = (hour: number) => `${hour.toString().padStart(2, '0')}:00`;
+
+      let currentRow = 1;
+
+      setCell(currentRow, 1, 'PLANIFICACIÓN HORARIA DEL TRATAMIENTO', {
+        font: { bold: true, sz: 20, color: { rgb: '0C395C' } },
+        fill: { patternType: 'solid', fgColor: { rgb: 'FFFFFF' } }
+      });
+      merges.push({ s: { r: currentRow - 1, c: 0 }, e: { r: currentRow - 1, c: lastColumnIndex } });
+      setRowHeight(currentRow, 32);
+      currentRow++;
+
+      const patientLabel = patientName || 'No especificado';
+      setCell(currentRow, 1, `Hospital General - Servicio de Farmacia | Paciente: ${patientLabel} | Fecha: ${planDate}`, {
+        font: { bold: true, sz: 12, color: { rgb: '0C395C' } },
+        fill: { patternType: 'solid', fgColor: { rgb: 'E0F2F1' } }
+      });
+      merges.push({ s: { r: currentRow - 1, c: 0 }, e: { r: currentRow - 1, c: lastColumnIndex } });
+      setRowHeight(currentRow, 24);
+      currentRow++;
+
+      setCell(currentRow, 1, 'Medicamento', {
+        font: { bold: true, color: { rgb: '0C395C' } },
+        fill: { patternType: 'solid', fgColor: { rgb: 'D7ECFB' } }
+      });
+
+      planningHours.forEach((hour, index) => {
+        const columnIndex = index + 2;
+        setCell(currentRow, columnIndex, `${formatHour(hour)}\n${getHourEmoji(hour)}`, {
+          font: { bold: true, color: { rgb: '0C395C' } },
+          fill: { patternType: 'solid', fgColor: { rgb: 'D7ECFB' } }
+        });
+      });
+      setRowHeight(currentRow, 46);
+      currentRow++;
+
+      const sortedEntries = [...scheduleEntriesWithMedicine].sort((a, b) =>
+        a.medicine.comercialName.localeCompare(b.medicine.comercialName)
+      );
+
+      let nextRow = currentRow;
+
+      if (sortedEntries.length === 0) {
+        setCell(nextRow, 1, 'Sin medicamentos planificados en el calendario', {
+          font: { bold: true, color: { rgb: 'B26A00' } },
+          fill: { patternType: 'solid', fgColor: { rgb: 'FFF9C4' } }
+        });
+        merges.push({ s: { r: nextRow - 1, c: 0 }, e: { r: nextRow - 1, c: lastColumnIndex } });
+        setRowHeight(nextRow, 28);
+        nextRow++;
+      } else {
+        sortedEntries.forEach(({ entry, medicine }) => {
+          setCell(nextRow, 1, medicine.comercialName, {
+            font: { bold: true, sz: 14, color: { rgb: '0D47A1' } },
+            fill: { patternType: 'solid', fgColor: { rgb: 'C8E6FA' } }
+          });
+
+          planningHours.forEach((hour, index) => {
+            const columnIndex = index + 2;
+            const hasDose = entry.hours.includes(hour);
+            setCell(nextRow, columnIndex, hasDose ? '1 💊' : '', {
+              font: hasDose ? { bold: true, sz: 14, color: { rgb: '0D47A1' } } : { sz: 11, color: { rgb: '90A4AE' } },
+              fill: {
+                patternType: 'solid',
+                fgColor: { rgb: hasDose ? 'FFFFFF' : 'E8F4FD' }
+              }
+            });
+          });
+
+          setRowHeight(nextRow, 32);
+          nextRow++;
+
+          const instructionsText = entry.instructions?.trim() || 'Sin instrucciones adicionales registradas.';
+          setCell(nextRow, 1, `Instrucciones: ${instructionsText}`, {
+            font: { italic: true, color: { rgb: '004D40' } },
+            fill: { patternType: 'solid', fgColor: { rgb: 'E0F7FA' } }
+          });
+          merges.push({ s: { r: nextRow - 1, c: 0 }, e: { r: nextRow - 1, c: lastColumnIndex } });
+          setRowHeight(nextRow, 24);
+          nextRow++;
+        });
+      }
+
+      worksheet['!cols'] = [
+        { wch: 30 },
+        ...planningHours.map(() => ({ wch: 6 }))
+      ];
+      worksheet['!rows'] = rowHeights;
+      worksheet['!merges'] = merges;
+
+      const lastUsedRow = Math.max(nextRow - 1, 3);
+      worksheet['!ref'] = XLSX.utils.encode_range({
+        s: { r: 0, c: 0 },
+        e: { r: lastUsedRow - 1, c: lastColumnIndex }
+      });
+
+      return worksheet;
+    };
+
+    const planningSheet = buildPlanningVisualSheet();
+    XLSX.utils.book_append_sheet(wb, planningSheet, 'Planning Visual');
 
     const normalizedPatientName = (patientName || 'paciente')
       .trim()
@@ -504,8 +368,8 @@ export const TreatmentDashboard: React.FC = () => {
   };
 
   const saveMedicine = () => {
-    if (!medicineFormData.comercialName || !medicineFormData.activePrinciples) {
-      alert('Por favor completa los campos obligatorios');
+    if (!medicineFormData.comercialName) {
+      alert('Por favor ingresa el nombre del medicamento');
       return;
     }
 
@@ -531,10 +395,9 @@ export const TreatmentDashboard: React.FC = () => {
     setMedicineFormData({
       comercialName: '',
       activePrinciples: '',
-      pharmacologicalAction: '',
+      pharmacologicalGroup: '',
       administrationInstructions: '',
       conservationInstructions: '',
-      dispensationPlace: '',
       additionalInfo: '',
       imageUrl: '',
       iconType: 'pill'
@@ -552,14 +415,13 @@ export const TreatmentDashboard: React.FC = () => {
     setEditingMedicine(medicine);
     setMedicineFormData({
       comercialName: medicine.comercialName,
-      activePrinciples: medicine.activePrinciples,
-      pharmacologicalAction: medicine.pharmacologicalAction,
-      administrationInstructions: medicine.administrationInstructions,
-      conservationInstructions: medicine.conservationInstructions,
-      dispensationPlace: medicine.dispensationPlace,
-      additionalInfo: medicine.additionalInfo,
-      imageUrl: (medicine as Medicine & { imageUrl?: string }).imageUrl || '',
-      iconType: (medicine as Medicine & { iconType?: string }).iconType || 'pill'
+      activePrinciples: medicine.activePrinciples || '',
+      pharmacologicalGroup: medicine.pharmacologicalGroup || '',
+      administrationInstructions: medicine.administrationInstructions || '',
+      conservationInstructions: medicine.conservationInstructions || '',
+      additionalInfo: medicine.additionalInfo || '',
+      imageUrl: medicine.imageUrl || '',
+      iconType: medicine.iconType || 'pill'
     });
     setShowMedicineModal(true);
   };
@@ -673,11 +535,11 @@ export const TreatmentDashboard: React.FC = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">{getMedicineIcon((medicine as Medicine & { iconType?: string }).iconType || 'pill')}</span>
+                      <span className="text-2xl">{getMedicineIcon(medicine.iconType || 'pill')}</span>
                       <h3 className="font-semibold text-gray-900">{medicine.comercialName}</h3>
                     </div>
-                    <p className="text-sm text-gray-600 mb-1">{medicine.activePrinciples}</p>
-                    <p className="text-xs text-gray-500">{medicine.pharmacologicalAction.substring(0, 50)}...</p>
+                    <p className="text-sm text-gray-600 mb-1">{medicine.activePrinciples || ''}</p>
+                    <p className="text-xs text-gray-500">{medicine.pharmacologicalAction?.substring(0, 50) || ''}...</p>
                   </div>
                   <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                     isSelected ? 'bg-clinical-600 border-clinical-600' : 'border-gray-300'
@@ -696,7 +558,7 @@ export const TreatmentDashboard: React.FC = () => {
   const renderInformation = () => {
     const selectedMedsData = selectedMedicines.map(item => item.medicine);
     const groupedByPharmacological = selectedMedsData.reduce((acc, medicine) => {
-      const group = medicine.pharmacologicalAction.split(',')[0].trim();
+      const group = medicine.pharmacologicalGroup || medicine.pharmacologicalAction?.split(',')[0].trim() || 'Sin Clasificar';
       if (!acc[group]) acc[group] = [];
       acc[group].push(medicine);
       return acc;
@@ -716,11 +578,11 @@ export const TreatmentDashboard: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {meds.map(medicine => (
                       <div key={medicine.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                        <span className="text-2xl">{getMedicineIcon((medicine as Medicine & { iconType?: string }).iconType || 'pill')}</span>
+                        <span className="text-2xl">{getMedicineIcon(medicine.iconType || 'pill')}</span>
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-900">{medicine.comercialName}</h4>
-                          <p className="text-sm text-gray-600">{medicine.activePrinciples}</p>
-                          <p className="text-xs text-gray-500 mt-1">{medicine.pharmacologicalAction}</p>
+                          <p className="text-sm text-gray-600">{medicine.activePrinciples || ''}</p>
+                          <p className="text-xs text-gray-500 mt-1">{medicine.pharmacologicalAction || ''}</p>
                         </div>
                       </div>
                     ))}
@@ -731,6 +593,46 @@ export const TreatmentDashboard: React.FC = () => {
           )}
         </div>
       </div>
+    );
+  };
+
+  const TIMELINE_HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+  const getHourLabel = (hour: number) => {
+    const padded = hour.toString().padStart(2, '0');
+    return `${padded}:00`;
+  };
+
+  const toggleHourForMedicine = (medicineId: string, hour: number) => {
+    setTimelineSchedule(prev => {
+      const existing = prev.find(entry => entry.medicineId === medicineId);
+      if (existing) {
+        const newHours = existing.hours.includes(hour)
+          ? existing.hours.filter(h => h !== hour)
+          : [...existing.hours, hour].sort((a, b) => a - b);
+        
+        if (newHours.length === 0) {
+          return prev.filter(entry => entry.medicineId !== medicineId);
+        }
+        
+        return prev.map(entry =>
+          entry.medicineId === medicineId
+            ? { ...entry, hours: newHours }
+            : entry
+        );
+      } else {
+        return [...prev, { medicineId, hours: [hour], instructions: '' }];
+      }
+    });
+  };
+
+  const updateTimelineInstructions = (medicineId: string, instructions: string) => {
+    setTimelineSchedule(prev =>
+      prev.map(entry =>
+        entry.medicineId === medicineId
+          ? { ...entry, instructions }
+          : entry
+      )
     );
   };
 
@@ -750,69 +652,65 @@ export const TreatmentDashboard: React.FC = () => {
           />
         </div>
 
-        <div className="space-y-4">
-          {doseSchedule.map((slot, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4">
-              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                {slot.timeSlot}
-              </h3>
-              
-              <div className="mb-3">
-                <select
-                  onChange={(e) => {
-                    const medicine = medicines.find(m => m.id === (e.target as HTMLSelectElement).value);
-                    if (medicine) {
-                      addMedicineToSchedule(medicine, slot.timeSlot);
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
-                  value=""
-                >
-                  <option value="">Añadir medicamento...</option>
-                  {selectedMedicines.map(item => (
-                    <option key={item.medicine.id} value={item.medicine.id}>
-                      {item.medicine.comercialName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                {slot.medicines.map((item, medIndex) => (
-                  <div key={medIndex} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                    <span className="text-lg">{getMedicineIcon((item.medicine as Medicine & { iconType?: string }).iconType || 'pill')}</span>
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{item.medicine.comercialName}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <input
-                          type="text"
-                          value={item.dosage}
-                          onChange={(e) => updateScheduleItem(slot.timeSlot, item.medicine.id, 'dosage', e.target.value)}
-                          className="px-2 py-1 border border-gray-300 rounded text-sm w-24"
-                          placeholder="Dosis"
-                        />
-                        <input
-                          type="text"
-                          value={item.instructions}
-                          onChange={(e) => updateScheduleItem(slot.timeSlot, item.medicine.id, 'instructions', e.target.value)}
-                          className="px-2 py-1 border border-gray-300 rounded text-sm flex-1"
-                          placeholder="Instrucciones específicas (ej: Triturar, Con comida)"
-                        />
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => removeFromSchedule(slot.timeSlot, item.medicine.id)}
-                      className="p-1 text-red-600 hover:bg-red-50 rounded"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+        {selectedMedicines.length === 0 ? (
+          <p className="text-gray-600 text-center py-8">No hay medicamentos seleccionados. Ve a la pestaña "Tratamiento" para seleccionar.</p>
+        ) : (
+          <div className="space-y-6">
+            {selectedMedicines.map(item => {
+              const scheduleEntry = timelineSchedule.find(e => e.medicineId === item.medicine.id);
+              return (
+                <div key={item.medicine.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-2xl">{getMedicineIcon(item.medicine.iconType || 'pill')}</span>
+                    <h3 className="font-semibold text-lg text-gray-900">{item.medicine.comercialName}</h3>
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+
+                  <div className="mb-4 overflow-x-auto">
+                    <div className="flex gap-1 pb-2">
+                      {TIMELINE_HOURS.map(hour => {
+                        const isSelected = scheduleEntry?.hours.includes(hour) ?? false;
+                        return (
+                          <button
+                            key={hour}
+                            onClick={() => toggleHourForMedicine(item.medicine.id, hour)}
+                            className={`px-2 py-2 rounded text-xs font-medium whitespace-nowrap transition-all ${
+                              isSelected
+                                ? 'bg-clinical-600 text-white'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                          >
+                            {getHourLabel(hour)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Instrucciones Adicionales
+                    </label>
+                    <input
+                      type="text"
+                      value={scheduleEntry?.instructions || ''}
+                      onChange={(e) => updateTimelineInstructions(item.medicine.id, e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
+                      placeholder="Ej: Con comida, Después de desayunar, etc."
+                    />
+                  </div>
+
+                  {scheduleEntry && scheduleEntry.hours.length > 0 && (
+                    <div className="mt-3 p-3 bg-clinical-50 rounded">
+                      <p className="text-sm text-clinical-700">
+                        <strong>Horarios seleccionados:</strong> {scheduleEntry.hours.map(h => getHourLabel(h)).join(', ')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -874,30 +772,35 @@ export const TreatmentDashboard: React.FC = () => {
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b-2 border-clinical-600">PAUTA HORARIA DE ADMINISTRACIÓN</h2>
               <div className="space-y-4">
-                {doseSchedule.filter(slot => slot.medicines.length > 0).map((slot, index) => (
-                  <div key={index} className="border-2 border-clinical-200 rounded-lg p-4">
-                    <h3 className="font-bold text-lg text-clinical-700 mb-3">{slot.timeSlot}</h3>
-                    <div className="space-y-2">
-                      {slot.medicines.map((item, medIndex) => (
-                        <div key={medIndex} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                {timelineSchedule.length === 0 ? (
+                  <div className="border-2 border-clinical-200 rounded-lg p-4 bg-gray-50">
+                    <p className="text-center text-gray-600">Sin medicamentos asignados en el calendario</p>
+                  </div>
+                ) : (
+                  timelineSchedule.map((entry, index) => {
+                    const medicine = medicines.find(m => m.id === entry.medicineId);
+                    if (!medicine) return null;
+                    return (
+                      <div key={index} className="border-2 border-clinical-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
-                            <span className="text-xl">{getMedicineIcon((item.medicine as Medicine & { iconType?: string }).iconType || 'pill')}</span>
+                            <span className="text-2xl">{getMedicineIcon(medicine.iconType || 'pill')}</span>
                             <div>
-                              <p className="font-semibold text-gray-900">{item.medicine.comercialName}</p>
-                              <p className="text-sm text-gray-600">{item.medicine.activePrinciples}</p>
+                              <h3 className="font-bold text-lg text-clinical-700">{medicine.comercialName}</h3>
+                              <p className="text-sm text-gray-600">{medicine.activePrinciples || ''}</p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold text-gray-900">{item.dosage}</p>
-                            {item.instructions && (
-                              <p className="text-sm text-gray-600">{item.instructions}</p>
-                            )}
-                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                        <div className="space-y-2 text-sm">
+                          <p><strong>Horarios:</strong> {entry.hours.map(h => getHourLabel(h)).join(', ')}</p>
+                          {entry.instructions && (
+                            <p><strong>Instrucciones:</strong> {entry.instructions}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -956,10 +859,10 @@ export const TreatmentDashboard: React.FC = () => {
               <tr className="bg-gray-50">
                 <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Icono</th>
                 <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Nombre Comercial</th>
+                <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Grupo Farmacológico</th>
                 <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Principio Activo</th>
                 <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Acción Farmacológica</th>
                 <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Administración</th>
-                <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Conservación</th>
                 <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Acciones</th>
               </tr>
             </thead>
@@ -967,13 +870,13 @@ export const TreatmentDashboard: React.FC = () => {
               {medicines.map(medicine => (
                 <tr key={medicine.id} className="hover:bg-gray-50">
                   <td className="border border-gray-200 px-4 py-2">
-                    <span className="text-2xl">{getMedicineIcon((medicine as Medicine & { iconType?: string }).iconType || 'pill')}</span>
+                    <span className="text-2xl">{getMedicineIcon(medicine.iconType || 'pill')}</span>
                   </td>
                   <td className="border border-gray-200 px-4 py-2 font-medium">{medicine.comercialName}</td>
-                  <td className="border border-gray-200 px-4 py-2">{medicine.activePrinciples}</td>
-                  <td className="border border-gray-200 px-4 py-2 text-sm">{medicine.pharmacologicalAction.substring(0, 50)}...</td>
-                  <td className="border border-gray-200 px-4 py-2 text-sm">{medicine.administrationInstructions.substring(0, 30)}...</td>
-                  <td className="border border-gray-200 px-4 py-2 text-sm">{medicine.conservationInstructions.substring(0, 30)}...</td>
+                  <td className="border border-gray-200 px-4 py-2 text-sm">{medicine.pharmacologicalGroup || '-'}</td>
+                  <td className="border border-gray-200 px-4 py-2 text-sm">{medicine.activePrinciples || '-'}</td>
+                  <td className="border border-gray-200 px-4 py-2 text-sm">{medicine.pharmacologicalAction?.substring(0, 50) || '-'}...</td>
+                  <td className="border border-gray-200 px-4 py-2 text-sm">{medicine.administrationInstructions?.substring(0, 30) || '-'}...</td>
                   <td className="border border-gray-200 px-4 py-2">
                     <div className="flex gap-2">
                       <button
@@ -1091,7 +994,7 @@ export const TreatmentDashboard: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Principios Activos *
+                  Principios Activos
                 </label>
                 <input
                   type="text"
@@ -1103,19 +1006,33 @@ export const TreatmentDashboard: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Acción Farmacológica *
+                  Grupo Farmacológico
                 </label>
-                <textarea
-                  value={medicineFormData.pharmacologicalAction}
-                  onChange={e => setMedicineFormData({ ...medicineFormData, pharmacologicalAction: e.target.value })}
-                  rows={2}
+                <input
+                  type="text"
+                  value={medicineFormData.pharmacologicalGroup}
+                  onChange={e => setMedicineFormData({ ...medicineFormData, pharmacologicalGroup: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
+                  placeholder="Ej: Analgésico, Antibiótico, etc."
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Instrucciones de Administración *
+                  Acción Farmacológica
+                </label>
+                <input
+                  type="text"
+                  placeholder="Descripción de la acción farmacológica"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent bg-gray-100"
+                  disabled
+                />
+                <p className="text-xs text-gray-500 mt-1">Se deduce automáticamente del Grupo Farmacológico</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  Instrucciones de Administración
                 </label>
                 <textarea
                   value={medicineFormData.administrationInstructions}
@@ -1127,24 +1044,12 @@ export const TreatmentDashboard: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Instrucciones de Conservación *
+                  Instrucciones de Conservación
                 </label>
                 <textarea
                   value={medicineFormData.conservationInstructions}
                   onChange={e => setMedicineFormData({ ...medicineFormData, conservationInstructions: e.target.value })}
                   rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Lugar de Dispensación *
-                </label>
-                <input
-                  type="text"
-                  value={medicineFormData.dispensationPlace}
-                  onChange={e => setMedicineFormData({ ...medicineFormData, dispensationPlace: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
                 />
               </div>

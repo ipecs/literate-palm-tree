@@ -12,10 +12,9 @@ export const Medicines: React.FC = () => {
   const [formData, setFormData] = useState({
     comercialName: '',
     activePrinciples: '',
-    pharmacologicalAction: '',
+    pharmacologicalGroup: '',
     administrationInstructions: '',
     conservationInstructions: '',
-    dispensationPlace: '',
     additionalInfo: '',
   });
 
@@ -32,10 +31,9 @@ export const Medicines: React.FC = () => {
     setFormData({
       comercialName: '',
       activePrinciples: '',
-      pharmacologicalAction: '',
+      pharmacologicalGroup: '',
       administrationInstructions: '',
       conservationInstructions: '',
-      dispensationPlace: '',
       additionalInfo: '',
     });
     setEditingId(null);
@@ -45,12 +43,11 @@ export const Medicines: React.FC = () => {
     if (medicine) {
       setFormData({
         comercialName: medicine.comercialName,
-        activePrinciples: medicine.activePrinciples,
-        pharmacologicalAction: medicine.pharmacologicalAction,
-        administrationInstructions: medicine.administrationInstructions,
-        conservationInstructions: medicine.conservationInstructions,
-        dispensationPlace: medicine.dispensationPlace,
-        additionalInfo: medicine.additionalInfo,
+        activePrinciples: medicine.activePrinciples || '',
+        pharmacologicalGroup: medicine.pharmacologicalGroup || '',
+        administrationInstructions: medicine.administrationInstructions || '',
+        conservationInstructions: medicine.conservationInstructions || '',
+        additionalInfo: medicine.additionalInfo || '',
       });
       setEditingId(medicine.id);
     }
@@ -63,15 +60,8 @@ export const Medicines: React.FC = () => {
   };
 
   const handleSave = () => {
-    if (
-      !formData.comercialName ||
-      !formData.activePrinciples ||
-      !formData.pharmacologicalAction ||
-      !formData.administrationInstructions ||
-      !formData.conservationInstructions ||
-      !formData.dispensationPlace
-    ) {
-      alert('Por favor completa todos los campos obligatorios (marcados con *)');
+    if (!formData.comercialName) {
+      alert('Por favor ingresa el nombre del medicamento');
       return;
     }
 
@@ -99,7 +89,7 @@ export const Medicines: React.FC = () => {
 
   const filteredMedicines = medicines.filter(m =>
     m.comercialName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.activePrinciples.toLowerCase().includes(searchTerm.toLowerCase())
+    (m.activePrinciples?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   );
 
   return (
@@ -170,13 +160,15 @@ export const Medicines: React.FC = () => {
 
                   <div>
                     <p className="text-sm text-gray-600">Instrucciones de Conservación</p>
-                    <p className="font-medium text-gray-900">{medicine.conservationInstructions}</p>
+                    <p className="font-medium text-gray-900">{medicine.conservationInstructions || '-'}</p>
                   </div>
 
-                  <div>
-                    <p className="text-sm text-gray-600">Lugar de Dispensación</p>
-                    <p className="font-medium text-gray-900">{medicine.dispensationPlace}</p>
-                  </div>
+                  {medicine.pharmacologicalGroup && (
+                    <div>
+                      <p className="text-sm text-gray-600">Grupo Farmacológico</p>
+                      <p className="font-medium text-gray-900">{medicine.pharmacologicalGroup}</p>
+                    </div>
+                  )}
 
                   {medicine.additionalInfo && (
                     <div>
@@ -249,14 +241,14 @@ export const Medicines: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Acción Farmacológica *
+                  Grupo Farmacológico
                 </label>
-                <textarea
-                  value={formData.pharmacologicalAction}
-                  onChange={e => setFormData({ ...formData, pharmacologicalAction: e.target.value })}
-                  rows={2}
+                <input
+                  type="text"
+                  value={formData.pharmacologicalGroup}
+                  onChange={e => setFormData({ ...formData, pharmacologicalGroup: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
-                  placeholder="Ej: Antiinflamatorio no esteroide, analgésico"
+                  placeholder="Ej: Analgésico, Antibiótico"
                 />
               </div>
 
@@ -283,19 +275,6 @@ export const Medicines: React.FC = () => {
                   rows={2}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
                   placeholder="Ej: Mantener a temperatura entre 15-25°C"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Lugar de Dispensación *
-                </label>
-                <input
-                  type="text"
-                  value={formData.dispensationPlace}
-                  onChange={e => setFormData({ ...formData, dispensationPlace: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
-                  placeholder="Ej: Farmacia, Mostrador"
                 />
               </div>
 
