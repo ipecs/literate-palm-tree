@@ -406,6 +406,11 @@ export const TreatmentDashboard: React.FC = () => {
       return;
     }
 
+    if (!selectedPatientId) {
+      alert('Por favor selecciona un paciente antes de generar el PDF');
+      return;
+    }
+
     const medicinesForPdf = timelineSchedule
       .map(entry => {
         const medicine = medicines.find(m => m.id === entry.medicineId);
@@ -413,8 +418,16 @@ export const TreatmentDashboard: React.FC = () => {
       })
       .filter((item): item is { medicine: Medicine; entry: TimelineScheduleEntry } => Boolean(item));
 
+    // Get patient data using selectedPatientId
+    const patient = StorageService.getPatientById(selectedPatientId);
+
+    if (!patient) {
+      alert('Error: No se encontró la información del paciente seleccionado');
+      return;
+    }
+
     generatePdfReport({
-      patient: undefined,
+      patient,
       medicines: medicinesForPdf,
       centerName: 'Hospital General - Servicio de Farmacia',
       pharmacistSignature: true
