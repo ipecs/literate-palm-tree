@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Save, ChevronDown, Printer } from 'lucide-react';
 import { StorageService } from '../storage/localStorage';
 import { Treatment, Patient, Medicine, TreatmentDose } from '../types';
 
-export const Treatments: React.FC = () => {
+export const Treatments = () => {
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
@@ -144,7 +144,7 @@ export const Treatments: React.FC = () => {
     return patientName.includes(term) || medicineName.includes(term);
   });
 
-  const TreatmentReport: React.FC<{ treatmentId: string }> = ({ treatmentId }) => {
+  const TreatmentReport = ({ treatmentId }: { treatmentId: string }) => {
     const treatment = StorageService.getTreatmentById(treatmentId);
     if (!treatment) return null;
 

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Download, Upload, Trash2, AlertCircle, CheckCircle, FileSpreadsheet } from 'lucide-react';
 import { StorageService } from '../storage/localStorage';
 import * as XLSX from 'xlsx-js-style';
 
-export const Settings: React.FC = () => {
+export const Settings = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 

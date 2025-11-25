@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Save, ChevronDown } from 'lucide-react';
 import { StorageService } from '../storage/localStorage';
 import { Patient } from '../types';
 
-export const Patients: React.FC = () => {
+export const Patients = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -95,7 +95,7 @@ export const Patients: React.FC = () => {
     p.cedula.includes(searchTerm)
   );
 
-  const PatientTreatments: React.FC<{ patientId: string }> = ({ patientId }) => {
+  const PatientTreatments = ({ patientId }: { patientId: string }) => {
     const treatments = StorageService.getTreatmentsByPatient(patientId);
     if (treatments.length === 0) {
       return <p className="text-gray-600 text-sm">No hay tratamientos asignados</p>;

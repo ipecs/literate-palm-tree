@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Save, ChevronDown } from 'lucide-react';
 import { StorageService } from '../storage/localStorage';
 import { Medicine } from '../types';
 
-export const Medicines: React.FC = () => {
+export const Medicines = () => {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);

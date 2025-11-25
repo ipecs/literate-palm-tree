@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Calendar, Pill, FileText, Download, ChevronRight, Check, X, Edit2, Trash2, Printer, Package, Activity, Database, FileType, Users } from 'lucide-react';
 import { StorageService } from '../storage/localStorage';
 import { Medicine, Patient, TimelineScheduleEntry } from '../types';
@@ -22,7 +22,7 @@ const REPORT_WARNINGS = [
   'Mantenga los medicamentos fuera del alcance de niños'
 ] as const;
 
-export const TreatmentDashboard: React.FC = () => {
+export const TreatmentDashboard = () => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'selection' | 'information' | 'calendar' | 'report' | 'database'>('dashboard');
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
