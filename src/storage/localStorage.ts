@@ -148,8 +148,4 @@ export const StorageService = {
   clearAllData: (): void => {
     StorageService.saveData(defaultData);
   },
-
-  getDefaultData: (): AppData => {
-    return JSON.parse(JSON.stringify(defaultData));
-  },
 };

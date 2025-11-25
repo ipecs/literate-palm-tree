@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Pill,
   Users,
@@ -12,7 +11,7 @@ interface SidebarProps {
   onViewChange: (view: string) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange }) => {
+export const Sidebar = ({ currentView, onViewChange }: SidebarProps) => {
   const menuItems = [
     { id: 'dashboard', label: 'Inicio', icon: Home },
     { id: 'patients', label: 'Pacientes', icon: Users },

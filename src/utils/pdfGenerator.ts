@@ -13,7 +13,6 @@ interface PdfReportOptions {
   patient?: Patient;
   medicines?: Array<{ medicine: Medicine; entry: TimelineScheduleEntry }>;
   centerName?: string;
-  generatedDate?: string;
   pharmacistSignature?: boolean;
 }
 
@@ -367,29 +366,4 @@ const calculateAge = (birthDate: string): number => {
     age--;
   }
   return age;
-};
-
-export const generateSimplePdf = (title: string, content: string, fileName: string = 'documento'): void => {
-  const doc = new jsPDF();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 15;
-
-  doc.setFontSize(16);
-  doc.setFont('Helvetica', 'bold');
-  doc.setTextColor(...CLINICAL_BLUE);
-  doc.text(title, margin, 20);
-
-  doc.setFontSize(10);
-  doc.setFont('Helvetica', 'normal');
-  doc.setTextColor(...DARK_TEXT);
-
-  const lines = doc.splitTextToSize(content, pageWidth - 2 * margin);
-  doc.text(lines, margin, 30);
-
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 150);
-  doc.text(`Generado el: ${new Date().toLocaleDateString('es-ES')}`, margin, pageHeight - 10);
-
-  doc.save(`${fileName}.pdf`);
 };
