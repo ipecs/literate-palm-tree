@@ -21,6 +21,14 @@ const getHourLabel = (hour: number): string => {
   return `${hour.toString().padStart(2, '0')}:00`;
 };
 
+const getHourEmoji = (hour: number): string => {
+  if (hour >= 6 && hour <= 12) return '☀️';
+  if (hour >= 13 && hour <= 18) return '🌤️';
+  if (hour >= 19 && hour <= 23) return '🌙';
+  return '🛏️';
+};
+
+const TIMELINE_HOURS = [0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
 const CLINICAL_BLUE = [12, 58, 111] as [number, number, number];
 const DARK_TEXT = [26, 26, 26] as [number, number, number];
 
@@ -94,6 +102,128 @@ export const generatePdfReport = (options: PdfReportOptions): void => {
     yPosition += 4;
   };
 
+  // Helper function to add Planning Visual matrix
+  const addPlanningVisual = () => {
+    checkNewPage(50);
+
+    doc.setFontSize(12);
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(...CLINICAL_BLUE);
+    doc.text('📋 PLANNING VISUAL - MATRIZ HORARIA', margin, yPosition);
+    yPosition += 10;
+
+    if (medicines.length === 0) {
+      doc.setFontSize(10);
+      doc.setFont('Helvetica', 'normal');
+      doc.setTextColor(150, 150, 150);
+      doc.text('No hay medicamentos asignados en el calendario.', margin, yPosition);
+      yPosition += 10;
+      return;
+    }
+
+    // Prepare header row with hours and emojis
+    const headerRow = ['Medicamento', ...TIMELINE_HOURS.map(h => `${getHourLabel(h)}\n${getHourEmoji(h)}`)];
+
+    // Prepare data rows
+    const tableData: (string | { content: string; styles?: Record<string, unknown> })[][] = [];
+
+    medicines.forEach(({ medicine, entry }) => {
+      // Medicine name and dose indicators row
+      const row: (string | { content: string; styles?: Record<string, unknown> })[] = [medicine.comercialName];
+      
+      TIMELINE_HOURS.forEach(hour => {
+        const hasDose = entry.hours.includes(hour);
+        row.push({
+          content: hasDose ? '✓' : '',
+          styles: {
+            fillColor: hasDose ? [255, 255, 255] : [245, 245, 245],
+            textColor: hasDose ? [12, 58, 111] : [200, 200, 200],
+            fontStyle: hasDose ? 'bold' : 'normal',
+            fontSize: hasDose ? 12 : 8,
+            halign: 'center',
+            valign: 'middle'
+          }
+        });
+      });
+
+      tableData.push(row);
+
+      // Add instructions row if exists
+      if (entry.instructions && entry.instructions.trim()) {
+        const instructionsRow: (string | { content: string; styles?: Record<string, unknown> })[] = [
+          {
+            content: `📌 ${entry.instructions}`,
+            styles: {
+              colSpan: TIMELINE_HOURS.length + 1,
+              fillColor: [232, 244, 253],
+              textColor: [60, 60, 60],
+              fontSize: 8,
+              halign: 'left',
+              valign: 'middle',
+              cellPadding: 2
+            }
+          }
+        ];
+        tableData.push(instructionsRow);
+      }
+    });
+
+    const startY = yPosition;
+    doc.autoTable({
+      startY,
+      head: [headerRow],
+      body: tableData,
+      margin: { left: margin, right: margin },
+      theme: 'grid',
+      headStyles: {
+        fillColor: [12, 58, 111],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 7,
+        halign: 'center',
+        valign: 'middle',
+        cellPadding: 1.5,
+        lineWidth: 0.3,
+        lineColor: [0, 0, 0]
+      },
+      bodyStyles: {
+        textColor: [26, 26, 26],
+        fontSize: 8,
+        halign: 'center',
+        valign: 'middle',
+        cellPadding: 2,
+        lineWidth: 0.2,
+        lineColor: [100, 100, 100]
+      },
+      columnStyles: {
+        0: { 
+          cellWidth: 35,
+          halign: 'left',
+          fontStyle: 'bold',
+          fontSize: 8,
+          fillColor: [227, 242, 253]
+        },
+        ...TIMELINE_HOURS.reduce((acc, _, index) => {
+          acc[index + 1] = { cellWidth: (contentWidth - 35) / TIMELINE_HOURS.length };
+          return acc;
+        }, {} as Record<number, { cellWidth: number }>)
+      },
+      didParseCell: (data: {
+        section: string;
+        column: { index: number };
+        cell: { styles: { fontSize: number; lineHeight: number } };
+      }) => {
+        // Ensure emoji headers are properly styled
+        if (data.section === 'head' && data.column.index > 0) {
+          data.cell.styles.fontSize = 6;
+          data.cell.styles.lineHeight = 1.1;
+        }
+      }
+    });
+
+    yPosition = doc.lastAutoTable.finalY + 10;
+  };
+
   // Helper function to check if we need a new page
   const checkNewPage = (minSpaceNeeded: number = 30) => {
     if (yPosition + minSpaceNeeded > pageHeight - margin) {
@@ -125,6 +255,9 @@ export const generatePdfReport = (options: PdfReportOptions): void => {
 
   // Patient Information
   addPatientInfo();
+
+  // Planning Visual Matrix
+  addPlanningVisual();
 
   // Treatment Schedule Section
   checkNewPage(40);
