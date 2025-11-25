@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Calendar, Pill, FileText, Download, ChevronRight, Check, X, Edit2, Trash2, Printer, Package, Activity, Database } from 'lucide-react';
+import { Search, Plus, Calendar, Pill, FileText, Download, ChevronRight, Check, X, Edit2, Trash2, Printer, Package, Activity, Database, FileType } from 'lucide-react';
 import { StorageService } from '../storage/localStorage';
 import { Medicine, TimelineScheduleEntry } from '../types';
 import * as XLSX from 'xlsx-js-style';
+import { generatePdfReport } from '../utils/pdfGenerator';
 
 interface SelectedMedicine {
   medicine: Medicine;
@@ -120,6 +121,10 @@ export const TreatmentDashboard: React.FC = () => {
     return '🛏️';
   };
 
+  const getHourLabel = (hour: number): string => {
+    return `${hour.toString().padStart(2, '0')}:00`;
+  };
+
   const exportReportToExcel = () => {
     if (!showReport) {
       alert('Por favor genera el informe antes de exportar');
@@ -222,11 +227,19 @@ export const TreatmentDashboard: React.FC = () => {
       const totalColumns = planningHours.length + 1;
       const lastColumnIndex = totalColumns - 1;
 
+      // Professional border styling
       const thinBorder = {
         top: { style: 'thin' as const, color: { rgb: '000000' } },
         bottom: { style: 'thin' as const, color: { rgb: '000000' } },
         left: { style: 'thin' as const, color: { rgb: '000000' } },
         right: { style: 'thin' as const, color: { rgb: '000000' } }
+      };
+
+      const thickBorder = {
+        top: { style: 'medium' as const, color: { rgb: '000000' } },
+        bottom: { style: 'medium' as const, color: { rgb: '000000' } },
+        left: { style: 'medium' as const, color: { rgb: '000000' } },
+        right: { style: 'medium' as const, color: { rgb: '000000' } }
       };
 
       const baseStyle: XLSX.CellStyle = {
@@ -257,6 +270,7 @@ export const TreatmentDashboard: React.FC = () => {
 
       let currentRow = 1;
 
+      // Title row
       setCell(currentRow, 1, 'PLANIFICACIÓN HORARIA DEL TRATAMIENTO', {
         font: { bold: true, sz: 20, color: { rgb: '0C395C' } },
         fill: { patternType: 'solid', fgColor: { rgb: 'FFFFFF' } }
@@ -265,6 +279,7 @@ export const TreatmentDashboard: React.FC = () => {
       setRowHeight(currentRow, 32);
       currentRow++;
 
+      // Patient and date info row
       const patientLabel = patientName || 'No especificado';
       setCell(currentRow, 1, `Hospital General - Servicio de Farmacia | Paciente: ${patientLabel} | Fecha: ${planDate}`, {
         font: { bold: true, sz: 12, color: { rgb: '0C395C' } },
@@ -274,16 +289,20 @@ export const TreatmentDashboard: React.FC = () => {
       setRowHeight(currentRow, 24);
       currentRow++;
 
+      // Header row - Medicine column
       setCell(currentRow, 1, 'Medicamento', {
-        font: { bold: true, color: { rgb: '0C395C' } },
-        fill: { patternType: 'solid', fgColor: { rgb: 'D7ECFB' } }
+        font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
+        fill: { patternType: 'solid', fgColor: { rgb: '0C395C' } },
+        alignment: { vertical: 'center', horizontal: 'center' }
       });
 
+      // Header row - Hour columns with emojis
       planningHours.forEach((hour, index) => {
         const columnIndex = index + 2;
         setCell(currentRow, columnIndex, `${formatHour(hour)}\n${getHourEmoji(hour)}`, {
-          font: { bold: true, color: { rgb: '0C395C' } },
-          fill: { patternType: 'solid', fgColor: { rgb: 'D7ECFB' } }
+          font: { bold: true, sz: 10, color: { rgb: 'FFFFFF' } },
+          fill: { patternType: 'solid', fgColor: { rgb: '0C395C' } },
+          alignment: { vertical: 'center', horizontal: 'center' }
         });
       });
       setRowHeight(currentRow, 46);
@@ -296,39 +315,49 @@ export const TreatmentDashboard: React.FC = () => {
       let nextRow = currentRow;
 
       if (sortedEntries.length === 0) {
+        // No medicines message
         setCell(nextRow, 1, 'Sin medicamentos planificados en el calendario', {
-          font: { bold: true, color: { rgb: 'B26A00' } },
-          fill: { patternType: 'solid', fgColor: { rgb: 'FFF9C4' } }
+          font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' } },
+          fill: { patternType: 'solid', fgColor: { rgb: 'FFA500' } }
         });
         merges.push({ s: { r: nextRow - 1, c: 0 }, e: { r: nextRow - 1, c: lastColumnIndex } });
         setRowHeight(nextRow, 28);
         nextRow++;
       } else {
+        // Medicine rows
         sortedEntries.forEach(({ entry, medicine }) => {
+          // Medicine name row - Light blue background
           setCell(nextRow, 1, medicine.comercialName, {
-            font: { bold: true, sz: 14, color: { rgb: '0D47A1' } },
-            fill: { patternType: 'solid', fgColor: { rgb: 'C8E6FA' } }
+            font: { bold: true, sz: 12, color: { rgb: '0D47A1' } },
+            fill: { patternType: 'solid', fgColor: { rgb: 'E3F2FD' } },
+            alignment: { vertical: 'center', horizontal: 'left' }
           });
 
-          planningHours.forEach((hour, index) => {
-            const columnIndex = index + 2;
+          // Dose grid cells
+          planningHours.forEach((hour) => {
+            const columnIndex = planningHours.indexOf(hour) + 2;
             const hasDose = entry.hours.includes(hour);
-            setCell(nextRow, columnIndex, hasDose ? '1 💊' : '', {
-              font: hasDose ? { bold: true, sz: 14, color: { rgb: '0D47A1' } } : { sz: 11, color: { rgb: '90A4AE' } },
+            
+            setCell(nextRow, columnIndex, hasDose ? '1' : '', {
+              font: hasDose ? { bold: true, sz: 12, color: { rgb: '000000' } } : { sz: 11, color: { rgb: 'BDBDBD' } },
               fill: {
                 patternType: 'solid',
-                fgColor: { rgb: hasDose ? 'FFFFFF' : 'E8F4FD' }
-              }
+                fgColor: { rgb: hasDose ? 'FFFFFF' : 'F5F5F5' }
+              },
+              alignment: { vertical: 'center', horizontal: 'center' },
+              border: hasDose ? thickBorder : thinBorder
             });
           });
 
           setRowHeight(nextRow, 32);
           nextRow++;
 
+          // Instructions row - Merged cells
           const instructionsText = entry.instructions?.trim() || 'Sin instrucciones adicionales registradas.';
           setCell(nextRow, 1, `Instrucciones: ${instructionsText}`, {
-            font: { italic: true, color: { rgb: '004D40' } },
-            fill: { patternType: 'solid', fgColor: { rgb: 'E0F7FA' } }
+            font: { sz: 11, color: { rgb: '004D40' } },
+            fill: { patternType: 'solid', fgColor: { rgb: 'E0F7FA' } },
+            alignment: { vertical: 'center', horizontal: 'left', wrapText: true }
           });
           merges.push({ s: { r: nextRow - 1, c: 0 }, e: { r: nextRow - 1, c: lastColumnIndex } });
           setRowHeight(nextRow, 24);
@@ -336,9 +365,10 @@ export const TreatmentDashboard: React.FC = () => {
         });
       }
 
+      // Column widths: Column A = 40 chars, Hour columns = 5 chars each
       worksheet['!cols'] = [
-        { wch: 30 },
-        ...planningHours.map(() => ({ wch: 6 }))
+        { wch: 40 },
+        ...planningHours.map(() => ({ wch: 5 }))
       ];
       worksheet['!rows'] = rowHeights;
       worksheet['!merges'] = merges;
@@ -365,6 +395,27 @@ export const TreatmentDashboard: React.FC = () => {
     const fileName = `plan_tratamiento_${normalizedPatientName || 'paciente'}_${formattedDateForFile}`;
 
     XLSX.writeFile(wb, `${fileName}.xlsx`);
+  };
+
+  const exportReportToPdf = () => {
+    if (!showReport) {
+      alert('Por favor genera el informe antes de exportar');
+      return;
+    }
+
+    const medicinesForPdf = timelineSchedule
+      .map(entry => {
+        const medicine = medicines.find(m => m.id === entry.medicineId);
+        return medicine ? { medicine, entry } : null;
+      })
+      .filter((item): item is { medicine: Medicine; entry: TimelineScheduleEntry } => Boolean(item));
+
+    generatePdfReport({
+      patient: undefined,
+      medicines: medicinesForPdf,
+      centerName: 'Hospital General - Servicio de Farmacia',
+      pharmacistSignature: true
+    });
   };
 
   const saveMedicine = () => {
@@ -598,11 +649,6 @@ export const TreatmentDashboard: React.FC = () => {
 
   const TIMELINE_HOURS = Array.from({ length: 24 }, (_, i) => i);
 
-  const getHourLabel = (hour: number) => {
-    const padded = hour.toString().padStart(2, '0');
-    return `${padded}:00`;
-  };
-
   const toggleHourForMedicine = (medicineId: string, hour: number) => {
     setTimelineSchedule(prev => {
       const existing = prev.find(entry => entry.medicineId === medicineId);
@@ -730,6 +776,13 @@ export const TreatmentDashboard: React.FC = () => {
             </button>
             {showReport && (
               <>
+                <button
+                  onClick={exportReportToPdf}
+                  className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  <FileType className="w-4 h-4" />
+                  Descargar PDF Nativo
+                </button>
                 <button
                   onClick={exportReportToExcel}
                   className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
