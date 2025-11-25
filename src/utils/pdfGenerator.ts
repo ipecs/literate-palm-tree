@@ -21,11 +21,11 @@ const getHourLabel = (hour: number): string => {
   return `${hour.toString().padStart(2, '0')}:00`;
 };
 
-const getHourEmoji = (hour: number): string => {
-  if (hour >= 6 && hour <= 12) return '☀️';
-  if (hour >= 13 && hour <= 18) return '🌤️';
-  if (hour >= 19 && hour <= 23) return '🌙';
-  return '🛏️';
+const getHourPeriod = (hour: number): string => {
+  if (hour >= 6 && hour <= 12) return 'Manana';
+  if (hour >= 13 && hour <= 18) return 'Tarde';
+  if (hour >= 19 && hour <= 23) return 'Noche';
+  return 'Medianoche';
 };
 
 const TIMELINE_HOURS = [0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
@@ -109,7 +109,7 @@ export const generatePdfReport = (options: PdfReportOptions): void => {
     doc.setFontSize(12);
     doc.setFont('Helvetica', 'bold');
     doc.setTextColor(...CLINICAL_BLUE);
-    doc.text('📋 PLANNING VISUAL - MATRIZ HORARIA', margin, yPosition);
+    doc.text('PLANNING VISUAL - MATRIZ HORARIA', margin, yPosition);
     yPosition += 10;
 
     if (medicines.length === 0) {
@@ -121,8 +121,8 @@ export const generatePdfReport = (options: PdfReportOptions): void => {
       return;
     }
 
-    // Prepare header row with hours and emojis
-    const headerRow = ['Medicamento', ...TIMELINE_HOURS.map(h => `${getHourLabel(h)}\n${getHourEmoji(h)}`)];
+    // Prepare header row with hours and time period labels
+    const headerRow = ['Medicamento', ...TIMELINE_HOURS.map(h => `${getHourLabel(h)}\n${getHourPeriod(h)}`)];
 
     // Prepare data rows
     const tableData: (string | { content: string; styles?: Record<string, unknown> })[][] = [];
@@ -152,7 +152,7 @@ export const generatePdfReport = (options: PdfReportOptions): void => {
       if (entry.instructions && entry.instructions.trim()) {
         const instructionsRow: (string | { content: string; styles?: Record<string, unknown> })[] = [
           {
-            content: `📌 ${entry.instructions}`,
+            content: `Instrucciones: ${entry.instructions}`,
             styles: {
               colSpan: TIMELINE_HOURS.length + 1,
               fillColor: [232, 244, 253],
@@ -213,7 +213,7 @@ export const generatePdfReport = (options: PdfReportOptions): void => {
         column: { index: number };
         cell: { styles: { fontSize: number; lineHeight: number } };
       }) => {
-        // Ensure emoji headers are properly styled
+        // Ensure time period headers are properly styled
         if (data.section === 'head' && data.column.index > 0) {
           data.cell.styles.fontSize = 6;
           data.cell.styles.lineHeight = 1.1;
@@ -325,7 +325,7 @@ export const generatePdfReport = (options: PdfReportOptions): void => {
   doc.setFontSize(12);
   doc.setFont('Helvetica', 'bold');
   doc.setTextColor(...CLINICAL_BLUE);
-  doc.text('⚠️ ADVERTENCIAS IMPORTANTES', margin, yPosition);
+  doc.text('ADVERTENCIAS IMPORTANTES', margin, yPosition);
   yPosition += 8;
 
   const warnings = [
