@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Calendar, Pill, FileText, Download, ChevronRight, Check, X, Edit2, Trash2, Printer, Package, Activity, Database, FileType, Users } from 'lucide-react';
 import { StorageService } from '../storage/localStorage';
-import { Medicine, TimelineScheduleEntry } from '../types';
+import { Medicine, Patient, TimelineScheduleEntry } from '../types';
 import * as XLSX from 'xlsx-js-style';
 import { generatePdfReport } from '../utils/pdfGenerator';
 
@@ -28,6 +28,8 @@ export const TreatmentDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMedicines, setSelectedMedicines] = useState<SelectedMedicine[]>([]);
   const [patientName, setPatientName] = useState('');
+  const [selectedPatientId, setSelectedPatientId] = useState('');
+  const [patients, setPatients] = useState<Patient[]>([]);
   const [timelineSchedule, setTimelineSchedule] = useState<TimelineScheduleEntry[]>([]);
   const [showReport, setShowReport] = useState(false);
   const [showMedicineModal, setShowMedicineModal] = useState(false);
@@ -49,6 +51,7 @@ export const TreatmentDashboard: React.FC = () => {
 
   const loadData = () => {
     setMedicines(StorageService.getMedicines());
+    setPatients(StorageService.getPatients());
   };
 
   const getLastBackupDate = () => {
@@ -758,20 +761,45 @@ export const TreatmentDashboard: React.FC = () => {
     );
   };
 
+  const handlePatientSelection = (patientId: string) => {
+    setSelectedPatientId(patientId);
+    if (patientId) {
+      const patient = patients.find(p => p.id === patientId);
+      if (patient) {
+        setPatientName(patient.fullName);
+      }
+    } else {
+      setPatientName('');
+    }
+  };
+
   const renderCalendar = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="mb-6">
           <label className="block text-sm font-semibold text-gray-900 mb-2">
-            Nombre del Paciente
+            Seleccionar Paciente
           </label>
-          <input
-            type="text"
-            value={patientName}
-            onChange={e => setPatientName(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
-            placeholder="Ingrese el nombre del paciente"
-          />
+          {patients.length === 0 ? (
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4">
+              <p className="text-amber-800">
+                No hay pacientes registrados en el sistema. Por favor, dirígete a la sección <strong>"Pacientes"</strong> para crear pacientes antes de asignar tratamientos.
+              </p>
+            </div>
+          ) : (
+            <select
+              value={selectedPatientId}
+              onChange={e => handlePatientSelection(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent bg-white"
+            >
+              <option value="">Seleccione un paciente...</option>
+              {patients.map(patient => (
+                <option key={patient.id} value={patient.id}>
+                  {patient.fullName} - {patient.cedula}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         {selectedMedicines.length === 0 ? (
