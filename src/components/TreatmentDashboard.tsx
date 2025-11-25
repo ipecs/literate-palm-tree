@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Calendar, Pill, FileText, Download, ChevronRight, Check, X, Edit2, Trash2, Printer, Package, Activity, Database, FileType } from 'lucide-react';
+import { Search, Plus, Calendar, Pill, FileText, Download, ChevronRight, Check, X, Edit2, Trash2, Printer, Package, Activity, Database, FileType, Users } from 'lucide-react';
 import { StorageService } from '../storage/localStorage';
 import { Medicine, TimelineScheduleEntry } from '../types';
 import * as XLSX from 'xlsx-js-style';
@@ -485,61 +485,84 @@ export const TreatmentDashboard: React.FC = () => {
     window.print();
   };
 
-  const renderDashboard = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Total Medicamentos</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{medicines.length}</p>
+  const renderDashboard = () => {
+    const patients = StorageService.getPatients();
+    const treatments = StorageService.getTreatments();
+    const activeTreatments = treatments.filter(t => t.isActive).length;
+
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Pacientes Registrados</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{patients.length}</p>
+              </div>
+              <div className="p-3 rounded-full bg-blue-500">
+                <Users className="w-6 h-6 text-white" />
+              </div>
             </div>
-            <div className="p-3 rounded-full bg-blue-500">
-              <Pill className="w-6 h-6 text-white" />
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Medicamentos en Inventario</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{medicines.length}</p>
+              </div>
+              <div className="p-3 rounded-full bg-green-500">
+                <Pill className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Tratamientos Activos</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{activeTreatments}</p>
+              </div>
+              <div className="p-3 rounded-full bg-purple-500">
+                <Calendar className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Grupos Farmacológicos</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{getTotalPharmacologicalGroups()}</p>
+              </div>
+              <div className="p-3 rounded-full bg-orange-500">
+                <Package className="w-6 h-6 text-white" />
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Total Grupos Farmacológicos</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{getTotalPharmacologicalGroups()}</p>
-            </div>
-            <div className="p-3 rounded-full bg-green-500">
-              <Package className="w-6 h-6 text-white" />
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Database className="w-5 h-5" />
+              Última Copia de Seguridad
+            </h3>
+            <p className="text-2xl font-bold text-gray-900">{getLastBackupDate()}</p>
+            <p className="text-sm text-gray-600 mt-2">
+              {getLastBackupDate() !== 'No hay copias' ? 
+                'Copia de seguridad realizada correctamente' : 
+                'No se han realizado copias de seguridad'
+              }
+            </p>
           </div>
-        </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Última Copia de Seguridad</p>
-              <p className="text-xl font-bold text-gray-900 mt-2">{getLastBackupDate()}</p>
-            </div>
-            <div className="p-3 rounded-full bg-purple-500">
-              <Database className="w-6 h-6 text-white" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-md p-8">
-        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <Activity className="w-5 h-5" />
-          Información de Contacto
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-2">Desarrollador</h3>
-            <p className="text-gray-600">PharmaLocal Development Team</p>
-            <p className="text-gray-600">Email: support@pharmalocal.com</p>
-            <p className="text-gray-600">Teléfono: +1 234 567 890</p>
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-2">Consejos Rápidos</h3>
-            <ul className="text-gray-600 space-y-1 text-sm">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              Consejos Rápidos
+            </h3>
+            <ul className="text-gray-600 space-y-2 text-sm">
               <li>• Usa la pestaña "Tratamiento" para seleccionar medicamentos</li>
               <li>• Planifica dosis en el "Calendario"</li>
               <li>• Genera informes profesionales para imprimir</li>
@@ -547,9 +570,62 @@ export const TreatmentDashboard: React.FC = () => {
             </ul>
           </div>
         </div>
+
+        <div className="bg-white rounded-lg shadow-md p-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Activity className="w-5 h-5" />
+            Instrucciones de Inicio
+          </h2>
+          <div className="space-y-4">
+            <div className="flex gap-4">
+              <div className="flex-shrink-0">
+                <div className="flex items-center justify-center h-8 w-8 rounded-md bg-clinical-600 text-white">
+                  1
+                </div>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Registra Pacientes</h3>
+                <p className="text-gray-600 text-sm">Ve a la sección "Pacientes" y crea nuevos registros de pacientes con sus datos personales.</p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex-shrink-0">
+                <div className="flex items-center justify-center h-8 w-8 rounded-md bg-clinical-600 text-white">
+                  2
+                </div>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Crea tu Inventario de Medicamentos</h3>
+                <p className="text-gray-600 text-sm">Ve a "Medicamentos" y registra todos los medicamentos disponibles con su información farmacológica completa.</p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex-shrink-0">
+                <div className="flex items-center justify-center h-8 w-8 rounded-md bg-clinical-600 text-white">
+                  3
+                </div>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Planifica Tratamientos</h3>
+                <p className="text-gray-600 text-sm">En "Tratamientos", asigna medicamentos a pacientes definiendo horarios y pautas personalizadas.</p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex-shrink-0">
+                <div className="flex items-center justify-center h-8 w-8 rounded-md bg-clinical-600 text-white">
+                  4
+                </div>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Genera Hojas de Tratamiento</h3>
+                <p className="text-gray-600 text-sm">Crea informes visuales y profesionales listos para imprimir y entregar a los pacientes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderSelection = () => (
     <div className="space-y-6">
@@ -967,8 +1043,8 @@ export const TreatmentDashboard: React.FC = () => {
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard de Tratamiento</h1>
-        <p className="text-gray-600 mt-2">Planificación y gestión de tratamientos farmacológicos</p>
+        <h1 className="text-3xl font-bold text-gray-900">Bienvenido a PharmaLocal</h1>
+        <p className="text-gray-600 mt-2">Sistema de Gestión de Atención Farmacéutica</p>
       </div>
 
       <div className="bg-white rounded-lg shadow-md mb-6">
