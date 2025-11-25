@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
-import { Dashboard } from './components/Dashboard';
 import { Patients } from './components/Patients';
 import { Medicines } from './components/Medicines';
 import { Treatments } from './components/Treatments';
 import { Settings } from './components/Settings';
 import { TreatmentDashboard } from './components/TreatmentDashboard';
 
-type ViewType = 'dashboard' | 'patients' | 'medicines' | 'treatments' | 'settings' | 'treatment-dashboard';
+type ViewType = 'dashboard' | 'patients' | 'medicines' | 'treatments' | 'settings';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -15,7 +14,7 @@ function App() {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard onNavigate={(view) => setCurrentView(view as ViewType)} />;
+        return <TreatmentDashboard />;
       case 'patients':
         return <Patients />;
       case 'medicines':
@@ -24,10 +23,8 @@ function App() {
         return <Treatments />;
       case 'settings':
         return <Settings />;
-      case 'treatment-dashboard':
-        return <TreatmentDashboard />;
       default:
-        return <Dashboard onNavigate={(view) => setCurrentView(view as ViewType)} />;
+        return <TreatmentDashboard />;
     }
   };
 
