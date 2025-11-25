@@ -226,7 +226,7 @@ export const TreatmentDashboard: React.FC = () => {
       const worksheet: XLSX.WorkSheet = {};
       const merges: XLSX.Range[] = [];
       const rowHeights: { hpt?: number }[] = [];
-      const planningHours = Array.from({ length: 24 }, (_, index) => (index + 6) % 24);
+      const planningHours = [0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
       const totalColumns = planningHours.length + 1;
       const lastColumnIndex = totalColumns - 1;
 
@@ -726,7 +726,7 @@ export const TreatmentDashboard: React.FC = () => {
     );
   };
 
-  const TIMELINE_HOURS = Array.from({ length: 24 }, (_, i) => i);
+  const TIMELINE_HOURS = [0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
 
   const toggleHourForMedicine = (medicineId: string, hour: number) => {
     setTimelineSchedule(prev => {
