@@ -1,10 +1,11 @@
 import Dexie, { Table } from 'dexie';
-import { Medicine, Patient, Treatment, AppData } from '../types';
+import { Medicine, Patient, Treatment, AdverseReaction, AppData } from '../types';
 
 export class PharmaLocalDB extends Dexie {
   medicines!: Table<Medicine, string>;
   patients!: Table<Patient, string>;
   treatments!: Table<Treatment, string>;
+  adverseReactions!: Table<AdverseReaction, string>;
 
   constructor() {
     super('PharmaLocalDB');
@@ -13,6 +14,13 @@ export class PharmaLocalDB extends Dexie {
       medicines: 'id, comercialName, pharmacologicalGroup, createdAt',
       patients: 'id, fullName, cedula, createdAt',
       treatments: 'id, patientId, medicineId, isActive, startDate, createdAt'
+    });
+
+    this.version(2).stores({
+      medicines: 'id, comercialName, pharmacologicalGroup, createdAt',
+      patients: 'id, fullName, cedula, createdAt',
+      treatments: 'id, patientId, medicineId, isActive, startDate, createdAt',
+      adverseReactions: 'id, patientId, medicineId, dateReported, severity, status, createdAt'
     });
   }
 }
@@ -130,19 +138,50 @@ export const StorageService = {
     return await db.treatments.where('patientId').equals(patientId).toArray();
   },
 
+  // Adverse Reactions
+  addAdverseReaction: async (reaction: AdverseReaction): Promise<void> => {
+    await db.adverseReactions.add(reaction);
+  },
+
+  updateAdverseReaction: async (id: string, reaction: Partial<AdverseReaction>): Promise<void> => {
+    await db.adverseReactions.update(id, reaction);
+  },
+
+  deleteAdverseReaction: async (id: string): Promise<void> => {
+    await db.adverseReactions.delete(id);
+  },
+
+  getAdverseReactions: async (): Promise<AdverseReaction[]> => {
+    return await db.adverseReactions.toArray();
+  },
+
+  getAdverseReactionById: async (id: string): Promise<AdverseReaction | undefined> => {
+    return await db.adverseReactions.get(id);
+  },
+
+  getAdverseReactionsByPatient: async (patientId: string): Promise<AdverseReaction[]> => {
+    return await db.adverseReactions.where('patientId').equals(patientId).toArray();
+  },
+
+  getAdverseReactionsByMedicine: async (medicineId: string): Promise<AdverseReaction[]> => {
+    return await db.adverseReactions.where('medicineId').equals(medicineId).toArray();
+  },
+
   // Bulk operations
   exportData: async (): Promise<string> => {
-    const [medicines, patients, treatments] = await Promise.all([
+    const [medicines, patients, treatments, adverseReactions] = await Promise.all([
       db.medicines.toArray(),
       db.patients.toArray(),
-      db.treatments.toArray()
+      db.treatments.toArray(),
+      db.adverseReactions.toArray()
     ]);
     
     const data: AppData = {
       medicines,
       patients,
       treatments,
-      version: 1
+      adverseReactions,
+      version: 2
     };
     
     return JSON.stringify(data, null, 2);
@@ -155,10 +194,11 @@ export const StorageService = {
         return false;
       }
 
-      await db.transaction('rw', db.medicines, db.patients, db.treatments, async () => {
+      await db.transaction('rw', db.medicines, db.patients, db.treatments, db.adverseReactions, async () => {
         await db.medicines.clear();
         await db.patients.clear();
         await db.treatments.clear();
+        await db.adverseReactions.clear();
 
         if (data.medicines.length > 0) {
           await db.medicines.bulkPut(data.medicines);
@@ -168,6 +208,9 @@ export const StorageService = {
         }
         if (data.treatments.length > 0) {
           await db.treatments.bulkPut(data.treatments);
+        }
+        if (data.adverseReactions && data.adverseReactions.length > 0) {
+          await db.adverseReactions.bulkPut(data.adverseReactions);
         }
       });
 
@@ -179,10 +222,11 @@ export const StorageService = {
   },
 
   clearAllData: async (): Promise<void> => {
-    await db.transaction('rw', db.medicines, db.patients, db.treatments, async () => {
+    await db.transaction('rw', db.medicines, db.patients, db.treatments, db.adverseReactions, async () => {
       await db.medicines.clear();
       await db.patients.clear();
       await db.treatments.clear();
+      await db.adverseReactions.clear();
     });
   },
 };
