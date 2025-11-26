@@ -152,28 +152,28 @@ export const Settings = () => {
   };
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
+    <div className="p-8 surface-page min-h-screen">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Configuración</h1>
-        <p className="text-gray-600 mt-2">Administra los datos del sistema</p>
+        <h1 className="text-3xl font-bold text-primary">Configuración</h1>
+        <p className="text-secondary mt-2">Administra los datos del sistema</p>
       </div>
 
       {message && (
         <div
           className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
             message.type === 'success'
-              ? 'bg-green-50 border border-green-200'
-              : 'bg-red-50 border border-red-200'
+              ? 'badge-success border '
+              : 'badge-danger border '
           }`}
         >
           {message.type === 'success' ? (
-            <CheckCircle className="w-5 h-5 text-green-600" />
+            <CheckCircle className="w-5 h-5 text-inverse" />
           ) : (
-            <AlertCircle className="w-5 h-5 text-red-600" />
+            <AlertCircle className="w-5 h-5 text-inverse" />
           )}
           <p
             className={`font-medium ${
-              message.type === 'success' ? 'text-green-900' : 'text-red-900'
+              message.type === 'success' ? 'text-inverse' : 'text-inverse'
             }`}
           >
             {message.text}
@@ -182,92 +182,92 @@ export const Settings = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
-          <p className="text-gray-600 text-sm font-medium">Pacientes</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{stats.patients}</p>
+        <div className="surface-card rounded-lg shadow-themed-md p-6 border-l-4 border-default">
+          <p className="text-secondary text-sm font-medium">Pacientes</p>
+          <p className="text-3xl font-bold text-primary mt-2">{stats.patients}</p>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
-          <p className="text-gray-600 text-sm font-medium">Medicamentos</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{stats.medicines}</p>
+        <div className="surface-card rounded-lg shadow-themed-md p-6 border-l-4 border-default">
+          <p className="text-secondary text-sm font-medium">Medicamentos</p>
+          <p className="text-3xl font-bold text-primary mt-2">{stats.medicines}</p>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
-          <p className="text-gray-600 text-sm font-medium">Tratamientos</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{stats.treatments}</p>
+        <div className="surface-card rounded-lg shadow-themed-md p-6 border-l-4 border-default">
+          <p className="text-secondary text-sm font-medium">Tratamientos</p>
+          <p className="text-3xl font-bold text-primary mt-2">{stats.treatments}</p>
         </div>
       </div>
 
       <div className="space-y-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="surface-card rounded-lg shadow-themed-md p-6">
           <div className="flex items-start gap-4 mb-4">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Download className="w-6 h-6 text-blue-600" />
+            <div className="p-3 button-primary rounded-lg">
+              <Download className="w-6 h-6 text-primary" />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-gray-900">Exportar Datos (Backup)</h2>
-              <p className="text-gray-600 text-sm mt-1">
+              <h2 className="text-xl font-bold text-primary">Exportar Datos (Backup)</h2>
+              <p className="text-secondary text-sm mt-1">
                 Descarga todos tus datos en un archivo JSON seguro que puedes guardar y restaurar después.
               </p>
             </div>
           </div>
           <button
             onClick={handleExport}
-            className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
+            className="w-full button-primary text-inverse px-4 py-3 rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
           >
             <Download className="w-5 h-5" />
             Descargar Backup
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="surface-card rounded-lg shadow-themed-md p-6">
           <div className="flex items-start gap-4 mb-4">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <Upload className="w-6 h-6 text-green-600" />
+            <div className="p-3 badge-success rounded-lg">
+              <Upload className="w-6 h-6 text-inverse" />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-gray-900">Importar Datos (Restaurar)</h2>
-              <p className="text-gray-600 text-sm mt-1">
+              <h2 className="text-xl font-bold text-primary">Importar Datos (Restaurar)</h2>
+              <p className="text-secondary text-sm mt-1">
                 Restaura datos desde un archivo JSON de backup anterior. Esto reemplazará todos los datos actuales.
               </p>
             </div>
           </div>
           <button
             onClick={handleImport}
-            className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2"
+            className="w-full button-success text-inverse px-4 py-3 rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
           >
             <Upload className="w-5 h-5" />
             Cargar Backup
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="surface-card rounded-lg shadow-themed-md p-6">
           <div className="flex items-start gap-4 mb-4">
-            <div className="p-3 bg-purple-100 rounded-lg">
+            <div className="p-3 badge-primary rounded-lg">
               <FileSpreadsheet className="w-6 h-6 text-purple-600" />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-gray-900">Exportar Reporte Completo (.xlsx)</h2>
-              <p className="text-gray-600 text-sm mt-1">
+              <h2 className="text-xl font-bold text-primary">Exportar Reporte Completo (.xlsx)</h2>
+              <p className="text-secondary text-sm mt-1">
                 Exporta todos los datos del sistema a un archivo Excel profesional con múltiples hojas: Resumen, Inventario, Pacientes y Tratamientos.
               </p>
             </div>
           </div>
           <button
             onClick={exportFullReportToExcel}
-            className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium flex items-center justify-center gap-2"
+            className="w-full button-primary text-inverse px-4 py-3 rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
           >
             <FileSpreadsheet className="w-5 h-5" />
             Descargar Reporte Completo (.xlsx)
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
+        <div className="surface-card rounded-lg shadow-themed-md p-6 border-l-4">
           <div className="flex items-start gap-4 mb-4">
-            <div className="p-3 bg-red-100 rounded-lg">
-              <Trash2 className="w-6 h-6 text-red-600" />
+            <div className="p-3 button-danger rounded-lg">
+              <Trash2 className="w-6 h-6 text-inverse" />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-gray-900">Eliminar Todos los Datos</h2>
-              <p className="text-gray-600 text-sm mt-1">
+              <h2 className="text-xl font-bold text-primary">Eliminar Todos los Datos</h2>
+              <p className="text-secondary text-sm mt-1">
                 Elimina permanentemente TODOS los datos del sistema (pacientes, medicamentos y tratamientos). Esta acción no se puede deshacer.
               </p>
             </div>
@@ -276,14 +276,14 @@ export const Settings = () => {
           {!showDeleteConfirm ? (
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="w-full bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center justify-center gap-2"
+              className="w-full button-danger text-inverse px-4 py-3 rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
             >
               <Trash2 className="w-5 h-5" />
               Eliminar Todos los Datos
             </button>
           ) : (
-            <div className="space-y-3 p-4 bg-red-50 rounded-lg border-2 border-red-500">
-              <p className="font-semibold text-red-900">
+            <div className="space-y-3 p-4 badge-danger rounded-lg border-2">
+              <p className="font-semibold text-inverse">
                 ⚠️ ¿Estás COMPLETAMENTE SEGURO?
               </p>
               <p className="text-sm text-red-800">
@@ -300,13 +300,13 @@ export const Settings = () => {
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 px-4 py-2 bg-gray-300 text-gray-900 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+                  className="flex-1 px-4 py-2 surface-card text-primary rounded-lg surface-hover transition-colors font-medium"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleClearAllData}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                  className="flex-1 px-4 py-2 button-danger text-inverse rounded-lg transition-colors font-medium"
                 >
                   Sí, Eliminar Todo
                 </button>
@@ -316,7 +316,7 @@ export const Settings = () => {
         </div>
       </div>
 
-      <div className="mt-8 bg-blue-50 rounded-lg p-6 border border-blue-200">
+      <div className="mt-8 surface-card rounded-lg p-6 border border-default">
         <h3 className="font-semibold text-blue-900 mb-2">ℹ️ Información del Sistema</h3>
         <div className="text-sm text-blue-900 space-y-2">
           <p><strong>Aplicación:</strong> PharmaLocal v1.0.0</p>
