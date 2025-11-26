@@ -2,12 +2,11 @@ import { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Patients } from './components/Patients';
 import { Medicines } from './components/Medicines';
-import { Treatments } from './components/Treatments';
 import { Settings } from './components/Settings';
 import { TreatmentDashboard } from './components/TreatmentDashboard';
 import { migrateFromLocalStorage } from './storage/db';
 
-type ViewType = 'dashboard' | 'patients' | 'medicines' | 'treatments' | 'settings';
+type ViewType = 'dashboard' | 'patients' | 'medicines' | 'settings';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -34,8 +33,6 @@ function App() {
         return <Patients />;
       case 'medicines':
         return <Medicines />;
-      case 'treatments':
-        return <Treatments />;
       case 'settings':
         return <Settings />;
       default:
