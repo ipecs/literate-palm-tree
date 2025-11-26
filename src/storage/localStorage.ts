@@ -1,12 +1,13 @@
 import { AppData, Medicine, Patient, Treatment } from '../types';
 
 const STORAGE_KEY = 'pharmalocal_data';
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2;
 
 const defaultData: AppData = {
   medicines: [],
   patients: [],
   treatments: [],
+  adverseReactions: [],
   version: CURRENT_VERSION,
 };
 

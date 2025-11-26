@@ -50,9 +50,22 @@ export interface Treatment {
   createdAt: number;
 }
 
+export interface AdverseReaction {
+  id: string;
+  patientId: string;
+  medicineId: string;
+  symptom: string;
+  severity: 'leve' | 'moderada' | 'grave';
+  dateReported: number;
+  notes?: string;
+  status: 'pendiente' | 'revisado' | 'reportado';
+  createdAt: number;
+}
+
 export interface AppData {
   medicines: Medicine[];
   patients: Patient[];
   treatments: Treatment[];
+  adverseReactions: AdverseReaction[];
   version: number;
 }
