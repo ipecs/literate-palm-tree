@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Save, ChevronDown, Printer } from 'lucide-react';
-import { StorageService } from '../storage/localStorage';
+import { StorageService } from '../storage/db';
 import { Treatment, Patient, Medicine, TreatmentDose } from '../types';
 
 export const Treatments = () => {
@@ -23,10 +23,10 @@ export const Treatments = () => {
     notes: '',
   });
 
-  const loadData = () => {
-    const treatmentsData = StorageService.getTreatments();
-    const patientsData = StorageService.getPatients();
-    const medicinesData = StorageService.getMedicines();
+  const loadData = async () => {
+    const treatmentsData = await StorageService.getTreatments();
+    const patientsData = await StorageService.getPatients();
+    const medicinesData = await StorageService.getMedicines();
     setTreatments(treatmentsData.sort((a, b) => b.createdAt - a.createdAt));
     setPatients(patientsData);
     setMedicines(medicinesData);
@@ -97,31 +97,31 @@ export const Treatments = () => {
     setFormData({ ...formData, doses: newDoses });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.patientId || !formData.medicineId || !formData.startDate || formData.doses.length === 0) {
       alert('Por favor completa todos los campos obligatorios y añade al menos una dosis');
       return;
     }
 
     if (editingId) {
-      StorageService.updateTreatment(editingId, formData);
+      await StorageService.updateTreatment(editingId, formData);
     } else {
       const newTreatment: Treatment = {
         id: Date.now().toString(),
         ...formData,
         createdAt: Date.now(),
       };
-      StorageService.addTreatment(newTreatment);
+      await StorageService.addTreatment(newTreatment);
     }
 
-    loadData();
+    await loadData();
     handleCloseModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('¿Estás seguro de que quieres eliminar este tratamiento?')) {
-      StorageService.deleteTreatment(id);
-      loadData();
+      await StorageService.deleteTreatment(id);
+      await loadData();
     }
   };
 
@@ -145,12 +145,26 @@ export const Treatments = () => {
   });
 
   const TreatmentReport = ({ treatmentId }: { treatmentId: string }) => {
-    const treatment = StorageService.getTreatmentById(treatmentId);
-    if (!treatment) return null;
+    const [reportData, setReportData] = useState<{ treatment: Treatment; patient: Patient; medicine: Medicine } | null>(null);
 
-    const patient = StorageService.getPatientById(treatment.patientId);
-    const medicine = getMedicineData(treatment.medicineId);
-    if (!patient || !medicine) return null;
+    useEffect(() => {
+      const loadReportData = async () => {
+        const treatment = await StorageService.getTreatmentById(treatmentId);
+        if (!treatment) return;
+
+        const patient = await StorageService.getPatientById(treatment.patientId);
+        const medicine = getMedicineData(treatment.medicineId);
+        
+        if (patient && medicine) {
+          setReportData({ treatment, patient, medicine });
+        }
+      };
+      loadReportData();
+    }, [treatmentId]);
+
+    if (!reportData) return null;
+
+    const { treatment, patient, medicine } = reportData;
 
     return (
       <div id={`print-${treatmentId}`} className="print-container surface-card">
@@ -216,7 +230,7 @@ export const Treatments = () => {
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-primary mb-4 pb-2 border-b-2 border-clinical-600">PAUTA DE ADMINISTRACIÓN</h2>
           <div className="space-y-4">
-            {treatment.doses.map((dose, idx) => (
+            {treatment.doses.map((dose: TreatmentDose, idx: number) => (
               <div key={idx} className="p-4 border-2 border-clinical-200 rounded-lg surface-page">
                 <p className="text-2xl font-bold text-clinical-700 mb-2">{dose.time}</p>
                 <p className="text-xl font-semibold text-primary">Dosis: {dose.dosage}</p>

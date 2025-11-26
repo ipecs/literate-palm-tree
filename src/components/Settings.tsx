@@ -1,19 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, Upload, Trash2, AlertCircle, CheckCircle, FileSpreadsheet } from 'lucide-react';
-import { StorageService } from '../storage/localStorage';
+import { StorageService } from '../storage/db';
 import * as XLSX from 'xlsx-js-style';
 
 export const Settings = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [stats, setStats] = useState({ patients: 0, medicines: 0, treatments: 0 });
+
+  useEffect(() => {
+    const loadStats = async () => {
+      const [patients, medicines, treatments] = await Promise.all([
+        StorageService.getPatients(),
+        StorageService.getMedicines(),
+        StorageService.getTreatments()
+      ]);
+      setStats({
+        patients: patients.length,
+        medicines: medicines.length,
+        treatments: treatments.length
+      });
+    };
+    loadStats();
+  }, []);
 
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 5000);
   };
 
-  const handleExport = () => {
-    const data = StorageService.exportData();
+  const handleExport = async () => {
+    const data = await StorageService.exportData();
     const element = document.createElement('a');
     const file = new Blob([data], { type: 'application/json' });
     element.href = URL.createObjectURL(file);
@@ -34,10 +51,10 @@ export const Settings = () => {
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = (event: ProgressEvent<FileReader>) => {
+      reader.onload = async (event: ProgressEvent<FileReader>) => {
         try {
           const jsonString = event.target?.result as string;
-          if (StorageService.importData(jsonString)) {
+          if (await StorageService.importData(jsonString)) {
             showMessage('success', 'Datos importados correctamente. Por favor recarga la página.');
             setTimeout(() => window.location.reload(), 2000);
           } else {
@@ -52,17 +69,17 @@ export const Settings = () => {
     input.click();
   };
 
-  const handleClearAllData = () => {
-    StorageService.clearAllData();
+  const handleClearAllData = async () => {
+    await StorageService.clearAllData();
     setShowDeleteConfirm(false);
     showMessage('success', 'Todos los datos han sido eliminados. Por favor recarga la página.');
     setTimeout(() => window.location.reload(), 2000);
   };
 
-  const exportFullReportToExcel = () => {
-    const medicines = StorageService.getMedicines();
-    const patients = StorageService.getPatients();
-    const treatments = StorageService.getTreatments();
+  const exportFullReportToExcel = async () => {
+    const medicines = await StorageService.getMedicines();
+    const patients = await StorageService.getPatients();
+    const treatments = await StorageService.getTreatments();
     
     const wb = XLSX.utils.book_new();
     
@@ -143,12 +160,6 @@ export const Settings = () => {
     
     XLSX.writeFile(wb, 'reporte_completo_pharmalocal.xlsx');
     showMessage('success', 'Reporte completo exportado a Excel correctamente');
-  };
-
-  const stats = {
-    patients: StorageService.getPatients().length,
-    medicines: StorageService.getMedicines().length,
-    treatments: StorageService.getTreatments().length,
   };
 
   return (

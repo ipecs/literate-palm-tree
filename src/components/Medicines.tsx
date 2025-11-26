@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Save, ChevronDown } from 'lucide-react';
-import { StorageService } from '../storage/localStorage';
+import { StorageService } from '../storage/db';
 import { Medicine } from '../types';
 
 export const Medicines = () => {
@@ -18,8 +18,8 @@ export const Medicines = () => {
     additionalInfo: '',
   });
 
-  const loadMedicines = () => {
-    const data = StorageService.getMedicines();
+  const loadMedicines = async () => {
+    const data = await StorageService.getMedicines();
     setMedicines(data.sort((a, b) => b.createdAt - a.createdAt));
   };
 
@@ -59,31 +59,31 @@ export const Medicines = () => {
     resetForm();
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.comercialName) {
       alert('Por favor ingresa el nombre del medicamento');
       return;
     }
 
     if (editingId) {
-      StorageService.updateMedicine(editingId, formData);
+      await StorageService.updateMedicine(editingId, formData);
     } else {
       const newMedicine: Medicine = {
         id: Date.now().toString(),
         ...formData,
         createdAt: Date.now(),
       };
-      StorageService.addMedicine(newMedicine);
+      await StorageService.addMedicine(newMedicine);
     }
 
-    loadMedicines();
+    await loadMedicines();
     handleCloseModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('¿Estás seguro de que quieres eliminar este medicamento?')) {
-      StorageService.deleteMedicine(id);
-      loadMedicines();
+      await StorageService.deleteMedicine(id);
+      await loadMedicines();
     }
   };
 
