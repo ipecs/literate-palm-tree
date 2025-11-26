@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Save, ChevronDown } from 'lucide-react';
-import { StorageService } from '../storage/localStorage';
-import { Patient } from '../types';
+import { StorageService } from '../storage/db';
+import { Patient, Treatment, Medicine } from '../types';
 
 export const Patients = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -19,8 +19,8 @@ export const Patients = () => {
     medicalConditions: '',
   });
 
-  const loadPatients = () => {
-    const data = StorageService.getPatients();
+  const loadPatients = async () => {
+    const data = await StorageService.getPatients();
     setPatients(data.sort((a, b) => b.createdAt - a.createdAt));
   };
 
@@ -62,31 +62,31 @@ export const Patients = () => {
     resetForm();
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.fullName || !formData.cedula || !formData.dateOfBirth) {
       alert('Por favor completa los campos obligatorios: Nombre, Cédula y Fecha de Nacimiento');
       return;
     }
 
     if (editingId) {
-      StorageService.updatePatient(editingId, formData);
+      await StorageService.updatePatient(editingId, formData);
     } else {
       const newPatient: Patient = {
         id: Date.now().toString(),
         ...formData,
         createdAt: Date.now(),
       };
-      StorageService.addPatient(newPatient);
+      await StorageService.addPatient(newPatient);
     }
 
-    loadPatients();
+    await loadPatients();
     handleCloseModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('¿Estás seguro de que quieres eliminar este paciente?')) {
-      StorageService.deletePatient(id);
-      loadPatients();
+      await StorageService.deletePatient(id);
+      await loadPatients();
     }
   };
 
@@ -96,7 +96,19 @@ export const Patients = () => {
   );
 
   const PatientTreatments = ({ patientId }: { patientId: string }) => {
-    const treatments = StorageService.getTreatmentsByPatient(patientId);
+    const [treatments, setTreatments] = useState<Treatment[]>([]);
+    const [medicines, setMedicines] = useState<Medicine[]>([]);
+
+    useEffect(() => {
+      const loadData = async () => {
+        const treatmentData = await StorageService.getTreatmentsByPatient(patientId);
+        const medicineData = await StorageService.getMedicines();
+        setTreatments(treatmentData);
+        setMedicines(medicineData);
+      };
+      loadData();
+    }, [patientId]);
+
     if (treatments.length === 0) {
       return <p className="text-muted text-sm">No hay tratamientos asignados</p>;
     }
@@ -104,7 +116,7 @@ export const Patients = () => {
     return (
       <div className="space-y-2">
         {treatments.map(treatment => {
-          const medicine = StorageService.getMedicineById(treatment.medicineId);
+          const medicine = medicines.find(m => m.id === treatment.medicineId);
           return (
             <div
               key={treatment.id}

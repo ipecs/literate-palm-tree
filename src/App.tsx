@@ -1,15 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Patients } from './components/Patients';
 import { Medicines } from './components/Medicines';
 import { Treatments } from './components/Treatments';
 import { Settings } from './components/Settings';
 import { TreatmentDashboard } from './components/TreatmentDashboard';
+import { migrateFromLocalStorage } from './storage/db';
 
 type ViewType = 'dashboard' | 'patients' | 'medicines' | 'treatments' | 'settings';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  const [isMigrating, setIsMigrating] = useState(true);
+
+  useEffect(() => {
+    const performMigration = async () => {
+      try {
+        await migrateFromLocalStorage();
+      } catch (error) {
+        console.error('Migration failed:', error);
+      } finally {
+        setIsMigrating(false);
+      }
+    };
+    performMigration();
+  }, []);
 
   const renderView = () => {
     switch (currentView) {
@@ -27,6 +42,20 @@ function App() {
         return <TreatmentDashboard />;
     }
   };
+
+  if (isMigrating) {
+    return (
+      <div className="flex h-screen surface-page items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-clinical-600 mx-auto"></div>
+          </div>
+          <p className="text-primary text-lg font-semibold">Migrando datos...</p>
+          <p className="text-secondary text-sm mt-2">Por favor espera un momento</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen surface-page">

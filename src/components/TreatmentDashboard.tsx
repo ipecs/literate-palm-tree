@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Calendar, Pill, FileText, Download, ChevronRight, Check, X, Edit2, Trash2, Printer, Package, Activity, Database, FileType, Users } from 'lucide-react';
-import { StorageService } from '../storage/localStorage';
-import { Medicine, Patient, TimelineScheduleEntry } from '../types';
+import { StorageService } from '../storage/db';
+import { Medicine, Patient, TimelineScheduleEntry, Treatment } from '../types';
 import * as XLSX from 'xlsx-js-style';
 import { generatePdfReport } from '../utils/pdfGenerator';
 
@@ -30,6 +30,7 @@ export const TreatmentDashboard = () => {
   const [patientName, setPatientName] = useState('');
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [timelineSchedule, setTimelineSchedule] = useState<TimelineScheduleEntry[]>([]);
   const [showReport, setShowReport] = useState(false);
   const [showMedicineModal, setShowMedicineModal] = useState(false);
@@ -49,9 +50,15 @@ export const TreatmentDashboard = () => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    setMedicines(StorageService.getMedicines());
-    setPatients(StorageService.getPatients());
+  const loadData = async () => {
+    const [medicinesData, patientsData, treatmentsData] = await Promise.all([
+      StorageService.getMedicines(),
+      StorageService.getPatients(),
+      StorageService.getTreatments()
+    ]);
+    setMedicines(medicinesData);
+    setPatients(patientsData);
+    setTreatments(treatmentsData);
   };
 
   const getLastBackupDate = () => {
@@ -400,7 +407,7 @@ export const TreatmentDashboard = () => {
     XLSX.writeFile(wb, `${fileName}.xlsx`);
   };
 
-  const exportReportToPdf = () => {
+  const exportReportToPdf = async () => {
     if (!showReport) {
       alert('Por favor genera el informe antes de exportar');
       return;
@@ -419,7 +426,7 @@ export const TreatmentDashboard = () => {
       .filter((item): item is { medicine: Medicine; entry: TimelineScheduleEntry } => Boolean(item));
 
     // Get patient data using selectedPatientId
-    const patient = StorageService.getPatientById(selectedPatientId);
+    const patient = await StorageService.getPatientById(selectedPatientId);
 
     if (!patient) {
       alert('Error: No se encontró la información del paciente seleccionado');
@@ -434,7 +441,7 @@ export const TreatmentDashboard = () => {
     });
   };
 
-  const saveMedicine = () => {
+  const saveMedicine = async () => {
     if (!medicineFormData.comercialName) {
       alert('Por favor ingresa el nombre del medicamento');
       return;
@@ -446,17 +453,17 @@ export const TreatmentDashboard = () => {
     };
 
     if (editingMedicine) {
-      StorageService.updateMedicine(editingMedicine.id, medicineData);
+      await StorageService.updateMedicine(editingMedicine.id, medicineData);
     } else {
       const newMedicine: Medicine = {
         id: Date.now().toString(),
         ...medicineData,
         createdAt: Date.now()
       };
-      StorageService.addMedicine(newMedicine);
+      await StorageService.addMedicine(newMedicine);
     }
 
-    loadData();
+    await loadData();
     setShowMedicineModal(false);
     setEditingMedicine(null);
     setMedicineFormData({
@@ -471,10 +478,10 @@ export const TreatmentDashboard = () => {
     });
   };
 
-  const deleteMedicine = (id: string) => {
+  const deleteMedicine = async (id: string) => {
     if (confirm('¿Estás seguro de que quieres eliminar este medicamento?')) {
-      StorageService.deleteMedicine(id);
-      loadData();
+      await StorageService.deleteMedicine(id);
+      await loadData();
     }
   };
 
@@ -502,8 +509,6 @@ export const TreatmentDashboard = () => {
   };
 
   const renderDashboard = () => {
-    const patients = StorageService.getPatients();
-    const treatments = StorageService.getTreatments();
     const activeTreatments = treatments.filter(t => t.isActive).length;
 
     return (
