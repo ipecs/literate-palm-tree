@@ -135,7 +135,7 @@ export const TreatmentDashboard = () => {
     return `${hour.toString().padStart(2, '0')}:00`;
   };
 
-  const exportReportToExcel = () => {
+  const exportReportToExcel = async () => {
     if (!showReport) {
       alert('Por favor genera el informe antes de exportar');
       return;
@@ -394,6 +394,86 @@ export const TreatmentDashboard = () => {
 
     const planningSheet = buildPlanningVisualSheet();
     XLSX.utils.book_append_sheet(wb, planningSheet, 'Planning Visual');
+
+    // Sheet 5: Farmacovigilancia
+    const allAdverseReactions = await StorageService.getAdverseReactions();
+    
+    // Filter by selected patient if one is selected
+    const relevantReactions = selectedPatientId 
+      ? allAdverseReactions.filter(r => r.patientId === selectedPatientId)
+      : allAdverseReactions;
+    
+    // Sort by severity (grave → moderada → leve) and then by date
+    const sortedReactions = relevantReactions.sort((a, b) => {
+      const severityOrder = { 'grave': 0, 'moderada': 1, 'leve': 2 };
+      const severityDiff = severityOrder[a.severity] - severityOrder[b.severity];
+      if (severityDiff !== 0) return severityDiff;
+      return b.dateReported - a.dateReported; // Most recent first within same severity
+    });
+    
+    if (sortedReactions.length > 0) {
+      const farmacovigilanciaData = sortedReactions.map(r => {
+        const patient = patients.find(p => p.id === r.patientId);
+        const medicine = medicines.find(m => m.id === r.medicineId);
+        return {
+          'Fecha': new Date(r.dateReported).toLocaleDateString('es-ES'),
+          'Paciente': patient?.fullName || 'Desconocido',
+          'Cédula': patient?.cedula || '',
+          'Medicamento': medicine?.comercialName || 'Desconocido',
+          'Síntoma': r.symptom,
+          'Gravedad': r.severity.toUpperCase(),
+          'Notas': r.notes || '',
+          'Estado': r.status.charAt(0).toUpperCase() + r.status.slice(1)
+        };
+      });
+      
+      const wsFarmacovigilancia = XLSX.utils.json_to_sheet(farmacovigilanciaData);
+      wsFarmacovigilancia['!cols'] = [
+        { wch: 12 }, { wch: 25 }, { wch: 15 }, { wch: 25 },
+        { wch: 30 }, { wch: 12 }, { wch: 40 }, { wch: 12 }
+      ];
+      
+      // Apply styling to header row (orange background)
+      const range = XLSX.utils.decode_range(wsFarmacovigilancia['!ref'] || 'A1');
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+        if (!wsFarmacovigilancia[cellAddress]) continue;
+        wsFarmacovigilancia[cellAddress].s = {
+          font: { bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: 'FF6B00' } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+        };
+      }
+      
+      // Apply conditional formatting to Gravedad column (column F, index 5)
+      for (let row = range.s.r + 1; row <= range.e.r; row++) {
+        const gravedadCell = XLSX.utils.encode_cell({ r: row, c: 5 }); // Column F (Gravedad)
+        if (wsFarmacovigilancia[gravedadCell]) {
+          const severity = wsFarmacovigilancia[gravedadCell].v;
+          if (severity === 'GRAVE') {
+            wsFarmacovigilancia[gravedadCell].s = {
+              font: { bold: true, color: { rgb: 'FFFFFF' } },
+              fill: { fgColor: { rgb: 'DC2626' } },
+              alignment: { horizontal: 'center' }
+            };
+          } else if (severity === 'MODERADA') {
+            wsFarmacovigilancia[gravedadCell].s = {
+              font: { bold: true, color: { rgb: '000000' } },
+              fill: { fgColor: { rgb: 'FBBF24' } },
+              alignment: { horizontal: 'center' }
+            };
+          } else if (severity === 'LEVE') {
+            wsFarmacovigilancia[gravedadCell].s = {
+              font: { bold: true, color: { rgb: 'FFFFFF' } },
+              fill: { fgColor: { rgb: '10B981' } },
+              alignment: { horizontal: 'center' }
+            };
+          }
+        }
+      }
+      
+      XLSX.utils.book_append_sheet(wb, wsFarmacovigilancia, 'Farmacovigilancia');
+    }
 
     const normalizedPatientName = (patientName || 'paciente')
       .trim()
