@@ -1,7 +1,6 @@
 import {
   Pill,
   Users,
-  Calendar,
   Settings,
   Home,
   Sun,
@@ -22,7 +21,6 @@ export const Sidebar = ({ currentView, onViewChange }: SidebarProps) => {
     { id: 'dashboard', label: 'Inicio', icon: Home },
     { id: 'patients', label: 'Pacientes', icon: Users },
     { id: 'medicines', label: 'Medicamentos', icon: Pill },
-    { id: 'treatments', label: 'Tratamientos', icon: Calendar },
     { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 
