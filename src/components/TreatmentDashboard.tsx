@@ -509,63 +509,63 @@ export const TreatmentDashboard = () => {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+          <div className="surface-card rounded-lg shadow-themed-md p-6 border-l-4 border-default">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Pacientes Registrados</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{patients.length}</p>
+                <p className="text-secondary text-sm font-medium">Pacientes Registrados</p>
+                <p className="text-3xl font-bold text-primary mt-2">{patients.length}</p>
               </div>
-              <div className="p-3 rounded-full bg-blue-500">
-                <Users className="w-6 h-6 text-white" />
+              <div className="p-3 rounded-full badge-primary">
+                <Users className="w-6 h-6 text-inverse" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+          <div className="surface-card rounded-lg shadow-themed-md p-6 border-l-4 border-default">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Medicamentos en Inventario</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{medicines.length}</p>
+                <p className="text-secondary text-sm font-medium">Medicamentos en Inventario</p>
+                <p className="text-3xl font-bold text-primary mt-2">{medicines.length}</p>
               </div>
-              <div className="p-3 rounded-full bg-green-500">
-                <Pill className="w-6 h-6 text-white" />
+              <div className="p-3 rounded-full badge-success">
+                <Pill className="w-6 h-6 text-inverse" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+          <div className="surface-card rounded-lg shadow-themed-md p-6 border-l-4 border-default">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Tratamientos Activos</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{activeTreatments}</p>
+                <p className="text-secondary text-sm font-medium">Tratamientos Activos</p>
+                <p className="text-3xl font-bold text-primary mt-2">{activeTreatments}</p>
               </div>
-              <div className="p-3 rounded-full bg-purple-500">
-                <Calendar className="w-6 h-6 text-white" />
+              <div className="p-3 rounded-full badge-primary">
+                <Calendar className="w-6 h-6 text-inverse" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
+          <div className="surface-card rounded-lg shadow-themed-md p-6 border-l-4 border-orange-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Grupos Farmacológicos</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{getTotalPharmacologicalGroups()}</p>
+                <p className="text-secondary text-sm font-medium">Grupos Farmacológicos</p>
+                <p className="text-3xl font-bold text-primary mt-2">{getTotalPharmacologicalGroups()}</p>
               </div>
               <div className="p-3 rounded-full bg-orange-500">
-                <Package className="w-6 h-6 text-white" />
+                <Package className="w-6 h-6 text-inverse" />
               </div>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <div className="surface-card rounded-lg shadow-themed-md p-6">
+            <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
               <Database className="w-5 h-5" />
               Última Copia de Seguridad
             </h3>
-            <p className="text-2xl font-bold text-gray-900">{getLastBackupDate()}</p>
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-2xl font-bold text-primary">{getLastBackupDate()}</p>
+            <p className="text-sm text-secondary mt-2">
               {getLastBackupDate() !== 'No hay copias' ? 
                 'Copia de seguridad realizada correctamente' : 
                 'No se han realizado copias de seguridad'
@@ -573,68 +573,68 @@ export const TreatmentDashboard = () => {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <div className="surface-card rounded-lg shadow-themed-md p-6">
+            <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
               <Activity className="w-5 h-5" />
               Consejos Rápidos
             </h3>
-            <ul className="text-gray-600 space-y-2 text-sm">
-              <li>• Usa la pestaña "Tratamiento" para seleccionar medicamentos</li>
-              <li>• Planifica dosis en el "Calendario"</li>
+            <ul className="text-secondary space-y-2 text-sm">
+              <li>• Usa la pestaña"Tratamiento" para seleccionar medicamentos</li>
+              <li>• Planifica dosis en el"Calendario"</li>
               <li>• Genera informes profesionales para imprimir</li>
               <li>• Exporta datos a Excel para análisis avanzados</li>
             </ul>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="surface-card rounded-lg shadow-themed-md p-8">
+          <h2 className="text-xl font-bold text-primary mb-4 flex items-center gap-2">
             <Activity className="w-5 h-5" />
             Instrucciones de Inicio
           </h2>
           <div className="space-y-4">
             <div className="flex gap-4">
               <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-8 w-8 rounded-md bg-clinical-600 text-white">
+                <div className="flex items-center justify-center h-8 w-8 rounded-md button-primary text-inverse">
                   1
                 </div>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Registra Pacientes</h3>
-                <p className="text-gray-600 text-sm">Ve a la sección "Pacientes" y crea nuevos registros de pacientes con sus datos personales.</p>
+                <h3 className="font-semibold text-primary">Registra Pacientes</h3>
+                <p className="text-secondary text-sm">Ve a la sección"Pacientes" y crea nuevos registros de pacientes con sus datos personales.</p>
               </div>
             </div>
             <div className="flex gap-4">
               <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-8 w-8 rounded-md bg-clinical-600 text-white">
+                <div className="flex items-center justify-center h-8 w-8 rounded-md button-primary text-inverse">
                   2
                 </div>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Crea tu Inventario de Medicamentos</h3>
-                <p className="text-gray-600 text-sm">Ve a "Medicamentos" y registra todos los medicamentos disponibles con su información farmacológica completa.</p>
+                <h3 className="font-semibold text-primary">Crea tu Inventario de Medicamentos</h3>
+                <p className="text-secondary text-sm">Ve a"Medicamentos" y registra todos los medicamentos disponibles con su información farmacológica completa.</p>
               </div>
             </div>
             <div className="flex gap-4">
               <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-8 w-8 rounded-md bg-clinical-600 text-white">
+                <div className="flex items-center justify-center h-8 w-8 rounded-md button-primary text-inverse">
                   3
                 </div>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Planifica Tratamientos</h3>
-                <p className="text-gray-600 text-sm">En "Tratamientos", asigna medicamentos a pacientes definiendo horarios y pautas personalizadas.</p>
+                <h3 className="font-semibold text-primary">Planifica Tratamientos</h3>
+                <p className="text-secondary text-sm">En"Tratamientos", asigna medicamentos a pacientes definiendo horarios y pautas personalizadas.</p>
               </div>
             </div>
             <div className="flex gap-4">
               <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-8 w-8 rounded-md bg-clinical-600 text-white">
+                <div className="flex items-center justify-center h-8 w-8 rounded-md button-primary text-inverse">
                   4
                 </div>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Genera Hojas de Tratamiento</h3>
-                <p className="text-gray-600 text-sm">Crea informes visuales y profesionales listos para imprimir y entregar a los pacientes.</p>
+                <h3 className="font-semibold text-primary">Genera Hojas de Tratamiento</h3>
+                <p className="text-secondary text-sm">Crea informes visuales y profesionales listos para imprimir y entregar a los pacientes.</p>
               </div>
             </div>
           </div>
@@ -645,19 +645,19 @@ export const TreatmentDashboard = () => {
 
   const renderSelection = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="surface-card rounded-lg shadow-themed-md p-6">
         <div className="flex items-center gap-4 mb-6">
           <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
+            <Search className="w-5 h-5 absolute left-3 top-3 text-muted" />
             <input
               type="text"
               placeholder="Buscar por nombre o principio activo..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-default rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
             />
           </div>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-secondary">
             {selectedMedicines.length} seleccionados
           </div>
         </div>
@@ -671,7 +671,7 @@ export const TreatmentDashboard = () => {
                 className={`border rounded-lg p-4 cursor-pointer transition-all ${
                   isSelected 
                     ? 'border-clinical-600 bg-clinical-50' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    : 'border-default hover:border-default'
                 }`}
                 onClick={() => toggleMedicineSelection(medicine)}
               >
@@ -679,15 +679,15 @@ export const TreatmentDashboard = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-2xl">{getMedicineIcon(medicine.iconType || 'pill')}</span>
-                      <h3 className="font-semibold text-gray-900">{medicine.comercialName}</h3>
+                      <h3 className="font-semibold text-primary">{medicine.comercialName}</h3>
                     </div>
-                    <p className="text-sm text-gray-600 mb-1">{medicine.activePrinciples || ''}</p>
-                    <p className="text-xs text-gray-500">{medicine.pharmacologicalAction?.substring(0, 50) || ''}...</p>
+                    <p className="text-sm text-secondary mb-1">{medicine.activePrinciples || ''}</p>
+                    <p className="text-xs text-muted">{medicine.pharmacologicalAction?.substring(0, 50) || ''}...</p>
                   </div>
                   <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                    isSelected ? 'bg-clinical-600 border-clinical-600' : 'border-gray-300'
+                    isSelected ? 'button-primary border-clinical-600' : 'border-default'
                   }`}>
-                    {isSelected && <Check className="w-3 h-3 text-white" />}
+                    {isSelected && <Check className="w-3 h-3 text-inverse" />}
                   </div>
                 </div>
               </div>
@@ -709,23 +709,23 @@ export const TreatmentDashboard = () => {
 
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Medicamentos Seleccionados</h2>
+        <div className="surface-card rounded-lg shadow-themed-md p-6">
+          <h2 className="text-xl font-bold text-primary mb-6">Medicamentos Seleccionados</h2>
           {selectedMedsData.length === 0 ? (
-            <p className="text-gray-600 text-center py-8">No hay medicamentos seleccionados. Ve a la pestaña "Tratamiento" para seleccionar.</p>
+            <p className="text-secondary text-center py-8">No hay medicamentos seleccionados. Ve a la pestaña"Tratamiento" para seleccionar.</p>
           ) : (
             <div className="space-y-6">
               {Object.entries(groupedByPharmacological).map(([group, meds]) => (
-                <div key={group} className="border border-gray-200 rounded-lg p-4">
+                <div key={group} className="border border-default rounded-lg p-4">
                   <h3 className="font-semibold text-lg text-clinical-700 mb-4">{group}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {meds.map(medicine => (
-                      <div key={medicine.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div key={medicine.id} className="flex items-start gap-3 p-3 surface-page rounded-lg">
                         <span className="text-2xl">{getMedicineIcon(medicine.iconType || 'pill')}</span>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900">{medicine.comercialName}</h4>
-                          <p className="text-sm text-gray-600">{medicine.activePrinciples || ''}</p>
-                          <p className="text-xs text-gray-500 mt-1">{medicine.pharmacologicalAction || ''}</p>
+                          <h4 className="font-semibold text-primary">{medicine.comercialName}</h4>
+                          <p className="text-sm text-secondary">{medicine.activePrinciples || ''}</p>
+                          <p className="text-xs text-muted mt-1">{medicine.pharmacologicalAction || ''}</p>
                         </div>
                       </div>
                     ))}
@@ -788,13 +788,13 @@ export const TreatmentDashboard = () => {
 
   const renderCalendar = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="surface-card rounded-lg shadow-themed-md p-6">
         <div className="mb-6">
-          <label className="block text-sm font-semibold text-gray-900 mb-2">
+          <label className="block text-sm font-semibold text-primary mb-2">
             Seleccionar Paciente
           </label>
           {patients.length === 0 ? (
-            <div className="bg-amber-50 border-l-4 border-amber-500 p-4">
+            <div className="badge-warning border-l-4 border-amber-500 p-4">
               <p className="text-amber-800">
                 No hay pacientes registrados en el sistema. Por favor, dirígete a la sección <strong>"Pacientes"</strong> para crear pacientes antes de asignar tratamientos.
               </p>
@@ -803,7 +803,7 @@ export const TreatmentDashboard = () => {
             <select
               value={selectedPatientId}
               onChange={e => handlePatientSelection(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent bg-white"
+              className="w-full px-4 py-2 border border-default rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent surface-card"
             >
               <option value="">Seleccione un paciente...</option>
               {patients.map(patient => (
@@ -816,16 +816,16 @@ export const TreatmentDashboard = () => {
         </div>
 
         {selectedMedicines.length === 0 ? (
-          <p className="text-gray-600 text-center py-8">No hay medicamentos seleccionados. Ve a la pestaña "Tratamiento" para seleccionar.</p>
+          <p className="text-secondary text-center py-8">No hay medicamentos seleccionados. Ve a la pestaña"Tratamiento" para seleccionar.</p>
         ) : (
           <div className="space-y-6">
             {selectedMedicines.map(item => {
               const scheduleEntry = timelineSchedule.find(e => e.medicineId === item.medicine.id);
               return (
-                <div key={item.medicine.id} className="border border-gray-200 rounded-lg p-4">
+                <div key={item.medicine.id} className="border border-default rounded-lg p-4">
                   <div className="flex items-center gap-3 mb-4">
                     <span className="text-2xl">{getMedicineIcon(item.medicine.iconType || 'pill')}</span>
-                    <h3 className="font-semibold text-lg text-gray-900">{item.medicine.comercialName}</h3>
+                    <h3 className="font-semibold text-lg text-primary">{item.medicine.comercialName}</h3>
                   </div>
 
                   <div className="mb-4 overflow-x-auto">
@@ -838,8 +838,8 @@ export const TreatmentDashboard = () => {
                             onClick={() => toggleHourForMedicine(item.medicine.id, hour)}
                             className={`px-2 py-2 rounded text-xs font-medium whitespace-nowrap transition-all ${
                               isSelected
-                                ? 'bg-clinical-600 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                ? 'button-primary text-inverse'
+                                : 'surface-hover text-secondary hover:surface-card'
                             }`}
                           >
                             {getHourLabel(hour)}
@@ -850,14 +850,14 @@ export const TreatmentDashboard = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-secondary mb-2">
                       Instrucciones Adicionales
                     </label>
                     <input
                       type="text"
                       value={scheduleEntry?.instructions || ''}
                       onChange={(e) => updateTimelineInstructions(item.medicine.id, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-default rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
                       placeholder="Ej: Con comida, Después de desayunar, etc."
                     />
                   </div>
@@ -880,13 +880,13 @@ export const TreatmentDashboard = () => {
 
   const renderReport = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="surface-card rounded-lg shadow-themed-md p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Vista Previa del Informe</h2>
+          <h2 className="text-xl font-bold text-primary">Vista Previa del Informe</h2>
           <div className="flex gap-3">
             <button
               onClick={generateReport}
-              className="flex items-center gap-2 bg-clinical-600 text-white px-4 py-2 rounded-lg hover:bg-clinical-700 transition-colors"
+              className="flex items-center gap-2 button-primary text-inverse px-4 py-2 rounded-lg transition-colors"
             >
               <FileText className="w-4 h-4" />
               Generar Informe
@@ -895,21 +895,21 @@ export const TreatmentDashboard = () => {
               <>
                 <button
                   onClick={exportReportToPdf}
-                  className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                  className="flex items-center gap-2 button-danger text-inverse px-4 py-2 rounded-lg transition-colors"
                 >
                   <FileType className="w-4 h-4" />
                   Descargar PDF Nativo
                 </button>
                 <button
                   onClick={exportReportToExcel}
-                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="flex items-center gap-2 button-primary text-inverse px-4 py-2 rounded-lg transition-colors"
                 >
                   <Download className="w-4 h-4" />
                   Guardar como Excel
                 </button>
                 <button
                   onClick={printReport}
-                  className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  className="flex items-center gap-2 button-success text-inverse px-4 py-2 rounded-lg transition-colors"
                 >
                   <Printer className="w-4 h-4" />
                   Imprimir / Guardar PDF
@@ -920,31 +920,31 @@ export const TreatmentDashboard = () => {
         </div>
 
         {!showReport ? (
-          <p className="text-gray-600 text-center py-8">Configura el tratamiento en las pestañas anteriores y luego genera el informe.</p>
+          <p className="text-secondary text-center py-8">Configura el tratamiento en las pestañas anteriores y luego genera el informe.</p>
         ) : (
           <div id="treatment-report" className="space-y-6">
             <div className="text-center border-b-2 border-clinical-700 pb-4">
               <h1 className="text-3xl font-bold text-clinical-700">PLAN DE TRATAMIENTO FARMACOLÓGICO</h1>
-              <p className="text-gray-600 mt-2">Sistema de Gestión Farmacéutica PharmaLocal</p>
+              <p className="text-secondary mt-2">Sistema de Gestión Farmacéutica PharmaLocal</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-600 font-semibold">PACIENTE</p>
-                <p className="text-xl font-bold text-gray-900">{patientName || 'No especificado'}</p>
+                <p className="text-xs text-secondary font-semibold">PACIENTE</p>
+                <p className="text-xl font-bold text-primary">{patientName || 'No especificado'}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-600 font-semibold">FECHA DEL PLAN</p>
-                <p className="text-xl font-bold text-gray-900">{new Date().toLocaleDateString('es-ES')}</p>
+                <p className="text-xs text-secondary font-semibold">FECHA DEL PLAN</p>
+                <p className="text-xl font-bold text-primary">{new Date().toLocaleDateString('es-ES')}</p>
               </div>
             </div>
 
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b-2 border-clinical-600">PAUTA HORARIA DE ADMINISTRACIÓN</h2>
+              <h2 className="text-xl font-bold text-primary mb-4 pb-2 border-b-2 border-clinical-600">PAUTA HORARIA DE ADMINISTRACIÓN</h2>
               <div className="space-y-4">
                 {timelineSchedule.length === 0 ? (
-                  <div className="border-2 border-clinical-200 rounded-lg p-4 bg-gray-50">
-                    <p className="text-center text-gray-600">Sin medicamentos asignados en el calendario</p>
+                  <div className="border-2 border-clinical-200 rounded-lg p-4 surface-page">
+                    <p className="text-center text-secondary">Sin medicamentos asignados en el calendario</p>
                   </div>
                 ) : (
                   timelineSchedule.map((entry, index) => {
@@ -957,7 +957,7 @@ export const TreatmentDashboard = () => {
                             <span className="text-2xl">{getMedicineIcon(medicine.iconType || 'pill')}</span>
                             <div>
                               <h3 className="font-bold text-lg text-clinical-700">{medicine.comercialName}</h3>
-                              <p className="text-sm text-gray-600">{medicine.activePrinciples || ''}</p>
+                              <p className="text-sm text-secondary">{medicine.activePrinciples || ''}</p>
                             </div>
                           </div>
                         </div>
@@ -975,7 +975,7 @@ export const TreatmentDashboard = () => {
             </div>
 
             <div className="border-t-2 border-clinical-600 pt-4">
-              <div className="bg-amber-50 border-l-4 border-amber-500 p-4">
+              <div className="badge-warning border-l-4 border-amber-500 p-4">
                 <p className="font-semibold text-amber-900 mb-2">ADVERTENCIAS IMPORTANTES</p>
                 <ul className="text-sm text-amber-800 space-y-1">
                   {REPORT_WARNINGS.map(warning => (
@@ -985,7 +985,7 @@ export const TreatmentDashboard = () => {
               </div>
             </div>
 
-            <div className="text-center text-xs text-gray-600">
+            <div className="text-center text-xs text-secondary">
               Documento generado el {new Date().toLocaleDateString('es-ES', {
                 year: 'numeric',
                 month: 'long',
@@ -1002,20 +1002,20 @@ export const TreatmentDashboard = () => {
 
   const renderDatabase = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="surface-card rounded-lg shadow-themed-md p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Base de Datos de Medicamentos</h2>
+          <h2 className="text-xl font-bold text-primary">Base de Datos de Medicamentos</h2>
           <div className="flex gap-3">
             <button
               onClick={exportMedicinesToExcel}
-              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              className="flex items-center gap-2 button-success text-inverse px-4 py-2 rounded-lg transition-colors"
             >
               <Download className="w-4 h-4" />
               Descargar Inventario (.xlsx)
             </button>
             <button
               onClick={() => setShowMedicineModal(true)}
-              className="flex items-center gap-2 bg-clinical-600 text-white px-4 py-2 rounded-lg hover:bg-clinical-700 transition-colors"
+              className="flex items-center gap-2 button-primary text-inverse px-4 py-2 rounded-lg transition-colors"
             >
               <Plus className="w-4 h-4" />
               Nuevo Medicamento
@@ -1026,38 +1026,38 @@ export const TreatmentDashboard = () => {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-gray-50">
-                <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Icono</th>
-                <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Nombre Comercial</th>
-                <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Grupo Farmacológico</th>
-                <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Principio Activo</th>
-                <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Acción Farmacológica</th>
-                <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Administración</th>
-                <th className="border border-gray-200 px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase">Acciones</th>
+              <tr className="surface-page">
+                <th className="border border-default px-4 py-2 text-left text-xs font-medium text-secondary uppercase">Icono</th>
+                <th className="border border-default px-4 py-2 text-left text-xs font-medium text-secondary uppercase">Nombre Comercial</th>
+                <th className="border border-default px-4 py-2 text-left text-xs font-medium text-secondary uppercase">Grupo Farmacológico</th>
+                <th className="border border-default px-4 py-2 text-left text-xs font-medium text-secondary uppercase">Principio Activo</th>
+                <th className="border border-default px-4 py-2 text-left text-xs font-medium text-secondary uppercase">Acción Farmacológica</th>
+                <th className="border border-default px-4 py-2 text-left text-xs font-medium text-secondary uppercase">Administración</th>
+                <th className="border border-default px-4 py-2 text-left text-xs font-medium text-secondary uppercase">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {medicines.map(medicine => (
-                <tr key={medicine.id} className="hover:bg-gray-50">
-                  <td className="border border-gray-200 px-4 py-2">
+                <tr key={medicine.id} className="hover:surface-page">
+                  <td className="border border-default px-4 py-2">
                     <span className="text-2xl">{getMedicineIcon(medicine.iconType || 'pill')}</span>
                   </td>
-                  <td className="border border-gray-200 px-4 py-2 font-medium">{medicine.comercialName}</td>
-                  <td className="border border-gray-200 px-4 py-2 text-sm">{medicine.pharmacologicalGroup || '-'}</td>
-                  <td className="border border-gray-200 px-4 py-2 text-sm">{medicine.activePrinciples || '-'}</td>
-                  <td className="border border-gray-200 px-4 py-2 text-sm">{medicine.pharmacologicalAction?.substring(0, 50) || '-'}...</td>
-                  <td className="border border-gray-200 px-4 py-2 text-sm">{medicine.administrationInstructions?.substring(0, 30) || '-'}...</td>
-                  <td className="border border-gray-200 px-4 py-2">
+                  <td className="border border-default px-4 py-2 font-medium">{medicine.comercialName}</td>
+                  <td className="border border-default px-4 py-2 text-sm">{medicine.pharmacologicalGroup || '-'}</td>
+                  <td className="border border-default px-4 py-2 text-sm">{medicine.activePrinciples || '-'}</td>
+                  <td className="border border-default px-4 py-2 text-sm">{medicine.pharmacologicalAction?.substring(0, 50) || '-'}...</td>
+                  <td className="border border-default px-4 py-2 text-sm">{medicine.administrationInstructions?.substring(0, 30) || '-'}...</td>
+                  <td className="border border-default px-4 py-2">
                     <div className="flex gap-2">
                       <button
                         onClick={() => editMedicine(medicine)}
-                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                        className="p-1 text-primary hover:surface-card rounded"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => deleteMedicine(medicine.id)}
-                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                        className="p-1 text-inverse hover:badge-danger rounded"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1082,14 +1082,14 @@ export const TreatmentDashboard = () => {
   ];
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
+    <div className="p-8 surface-page min-h-screen">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Bienvenido a PharmaLocal</h1>
-        <p className="text-gray-600 mt-2">Sistema de Gestión de Atención Farmacéutica</p>
+        <h1 className="text-3xl font-bold text-primary">Bienvenido a PharmaLocal</h1>
+        <p className="text-secondary mt-2">Sistema de Gestión de Atención Farmacéutica</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md mb-6">
-        <div className="flex flex-wrap border-b border-gray-200">
+      <div className="surface-card rounded-lg shadow-themed-md mb-6">
+        <div className="flex flex-wrap border-b border-default">
           {tabs.map(tab => {
             const Icon = tab.icon;
             return (
@@ -1099,7 +1099,7 @@ export const TreatmentDashboard = () => {
                 className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors ${
                   activeTab === tab.id
                     ? 'border-clinical-600 text-clinical-700 bg-clinical-50'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                    : 'border-transparent text-secondary hover:text-primary'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -1120,12 +1120,12 @@ export const TreatmentDashboard = () => {
 
       {showMedicineModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-screen overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">
+          <div className="surface-card rounded-lg shadow-themed-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div className="sticky top-0 surface-card border-b border-default p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-primary">
                 {editingMedicine ? 'Editar Medicamento' : 'Nuevo Medicamento'}
               </h2>
-              <button onClick={() => setShowMedicineModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+              <button onClick={() => setShowMedicineModal(false)} className="p-1 hover:surface-page rounded-lg">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -1133,25 +1133,25 @@ export const TreatmentDashboard = () => {
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  <label className="block text-sm font-semibold text-primary mb-2">
                     Nombre Comercial *
                   </label>
                   <input
                     type="text"
                     value={medicineFormData.comercialName}
                     onChange={e => setMedicineFormData({ ...medicineFormData, comercialName: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-default rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  <label className="block text-sm font-semibold text-primary mb-2">
                     Tipo de Icono
                   </label>
                   <select
                     value={medicineFormData.iconType}
                     onChange={e => setMedicineFormData({ ...medicineFormData, iconType: e.target.value as 'pill' | 'syrup' | 'injection' | 'capsule' | 'cream' })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-default rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
                   >
                     <option value="pill">Pastilla 💊</option>
                     <option value="capsule">Cápsula 🟢</option>
@@ -1163,103 +1163,103 @@ export const TreatmentDashboard = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                <label className="block text-sm font-semibold text-primary mb-2">
                   Principios Activos
                 </label>
                 <input
                   type="text"
                   value={medicineFormData.activePrinciples}
                   onChange={e => setMedicineFormData({ ...medicineFormData, activePrinciples: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-default rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                <label className="block text-sm font-semibold text-primary mb-2">
                   Grupo Farmacológico
                 </label>
                 <input
                   type="text"
                   value={medicineFormData.pharmacologicalGroup}
                   onChange={e => setMedicineFormData({ ...medicineFormData, pharmacologicalGroup: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-default rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
                   placeholder="Ej: Analgésico, Antibiótico, etc."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                <label className="block text-sm font-semibold text-primary mb-2">
                   Acción Farmacológica
                 </label>
                 <input
                   type="text"
                   placeholder="Descripción de la acción farmacológica"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent bg-gray-100"
+                  className="w-full px-4 py-2 border border-default rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent surface-page"
                   disabled
                 />
-                <p className="text-xs text-gray-500 mt-1">Se deduce automáticamente del Grupo Farmacológico</p>
+                <p className="text-xs text-muted mt-1">Se deduce automáticamente del Grupo Farmacológico</p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                <label className="block text-sm font-semibold text-primary mb-2">
                   Instrucciones de Administración
                 </label>
                 <textarea
                   value={medicineFormData.administrationInstructions}
                   onChange={e => setMedicineFormData({ ...medicineFormData, administrationInstructions: e.target.value })}
                   rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-default rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                <label className="block text-sm font-semibold text-primary mb-2">
                   Instrucciones de Conservación
                 </label>
                 <textarea
                   value={medicineFormData.conservationInstructions}
                   onChange={e => setMedicineFormData({ ...medicineFormData, conservationInstructions: e.target.value })}
                   rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-default rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                <label className="block text-sm font-semibold text-primary mb-2">
                   URL de Imagen (opcional)
                 </label>
                 <input
                   type="text"
                   value={medicineFormData.imageUrl}
                   onChange={e => setMedicineFormData({ ...medicineFormData, imageUrl: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-default rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
                   placeholder="https://ejemplo.com/imagen.jpg"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                <label className="block text-sm font-semibold text-primary mb-2">
                   Información Adicional
                 </label>
                 <textarea
                   value={medicineFormData.additionalInfo}
                   onChange={e => setMedicineFormData({ ...medicineFormData, additionalInfo: e.target.value })}
                   rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-default rounded-lg focus:ring-2 focus:ring-clinical-600 focus:border-transparent"
                 />
               </div>
             </div>
 
-            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-6 flex gap-3">
+            <div className="sticky bottom-0 surface-page border-t border-default p-6 flex gap-3">
               <button
                 onClick={() => setShowMedicineModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-900 hover:bg-gray-100 transition-colors"
+                className="flex-1 px-4 py-2 border border-default rounded-lg text-primary hover:surface-page transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={saveMedicine}
-                className="flex-1 bg-clinical-600 text-white px-4 py-2 rounded-lg hover:bg-clinical-700 transition-colors"
+                className="flex-1 button-primary text-inverse px-4 py-2 rounded-lg transition-colors"
               >
                 Guardar
               </button>

@@ -29,7 +29,7 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen surface-page">
       <Sidebar currentView={currentView} onViewChange={(view) => setCurrentView(view as ViewType)} />
       <main className="flex-1 overflow-auto">
         {renderView()}
